@@ -1,0 +1,64 @@
+name: Deploy to cPanel (FTP)
+
+# Runs on every push to main, and can be triggered manually from the Actions tab.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-ftp
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        # API lives at <site>/backend/api on the server. Absolute path keeps it
+        # correct regardless of which page (hash route) is open.
+        env:
+          VITE_API_BASE: /backend/api
+        run: npm run build
+
+      - name: Assemble deploy folder
+        run: |
+          mkdir -p deploy
+          # Frontend build output -> site root (index.html, assets/, images/, flags/)
+          cp -r frontend/dist/. deploy/
+          # Backend PHP code -> backend/, but WITHOUT env-specific config or user uploads
+          mkdir -p deploy/backend
+          rsync -a --exclude 'config/' --exclude 'uploads/' backend/ deploy/backend/
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          port: 21
+          local-dir: ./deploy/
+          # FTP account is chrooted to /home/chalcepi/sites/meetup, so root = ./
+          server-dir: ./
+          # Never touch production DB creds or user-uploaded files.
+          exclude: |
+            **/.git*
+            **/.git*/**
+            backend/config/**
+            backend/uploads/**
