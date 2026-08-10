@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-white text-slate-800 font-sans antialiased;
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full font-semibold transition
+           focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60;
+  }
+  .btn-blue {
+    @apply btn bg-brand-blue text-white hover:bg-brand-blueDark focus:ring-brand-blue px-5 py-2.5;
+  }
+  .btn-green {
+    @apply btn bg-brand-green text-white hover:bg-pink-700 focus:ring-brand-green px-5 py-2.5;
+  }
+  .btn-ghost {
+    @apply btn border border-slate-300 text-slate-700 hover:bg-slate-50 px-5 py-2.5;
+  }
+  .input {
+    @apply w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800
+           focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 focus:outline-none;
+  }
+  .card {
+    @apply rounded-2xl border border-slate-200 bg-white shadow-card;
+  }
+}
+
+/* Hide scrollbar on carousel rows (still scrollable). */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ---- Animated dual-colour footer ---- */
+@keyframes footerGradient {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.footer-animated {
+  background: linear-gradient(120deg, #3B0764 0%, #6D28D9 28%, #DB2777 52%, #6D28D9 76%, #3B0764 100%);
+  background-size: 300% 300%;
+  animation: footerGradient 18s ease infinite;
+}
+
+@keyframes accentFlow {
+  to { background-position: 200% center; }
+}
+.accent-flow {
+  background-image: linear-gradient(90deg, #7C3AED, #DB2777, #7C3AED, #DB2777);
+  background-size: 200% auto;
+  animation: accentFlow 5s linear infinite;
+}
+
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-22px); }
+}
+.float-slow { animation: floatY 9s ease-in-out infinite; }
+.float-slow.delayed { animation-delay: 3s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-animated, .accent-flow, .float-slow { animation: none; }
+}
+
+/* ---- react-datepicker: brand theme ---- */
+.react-datepicker {
+  font-family: inherit;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, .14);
+  overflow: hidden;
+}
+.react-datepicker__header {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  padding-top: 12px;
+}
+.react-datepicker__current-month { color: #0f172a; font-weight: 700; }
+.react-datepicker__day-name { color: #64748b; }
+.react-datepicker__day { border-radius: 9999px; }
+.react-datepicker__day:hover { background: #f3e8ff; border-radius: 9999px; }
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background: #7C3AED;
+  color: #fff;
+  border-radius: 9999px;
+}
+.react-datepicker__day--selected:hover { background: #6D28D9; }
+.react-datepicker__day--today { font-weight: 700; color: #7C3AED; }
+/* Today's number must stay white when it sits on the blue highlight. */
+.react-datepicker__day--today.react-datepicker__day--selected,
+.react-datepicker__day--today.react-datepicker__day--keyboard-selected {
+  color: #fff;
+}
+.react-datepicker__day--disabled { color: #cbd5e1; }
+.react-datepicker__navigation-icon::before { border-color: #64748b; }
+.react-datepicker__triangle { display: none; }
+.react-datepicker__close-icon::after { background: #94a3b8; }
+.react-datepicker__input-container input { width: 100%; }
+
+/* ---- Rich text editor + rendered "About us" content ---- */
+.rte-surface:empty::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  pointer-events: none;
+}
+.rte-surface ul, .rich-content ul { list-style: disc; padding-left: 1.4rem; margin: .4rem 0; }
+.rte-surface ol, .rich-content ol { list-style: decimal; padding-left: 1.4rem; margin: .4rem 0; }
+.rich-content p { margin: .4rem 0; }
+.rich-content h1 { font-size: 1.6rem; font-weight: 800; margin: .6rem 0 .3rem; }
+.rich-content h2 { font-size: 1.35rem; font-weight: 700; margin: .6rem 0 .3rem; }
+.rich-content h3 { font-size: 1.15rem; font-weight: 700; margin: .5rem 0 .25rem; }
+.rich-content a { color: #7C3AED; text-decoration: underline; }
+.rich-content blockquote { border-left: 3px solid #e9d5ff; padding-left: .8rem; color: #64748b; margin: .5rem 0; }
+
+/* ---- SweetAlert2: brand theme (pink/purple) ---- */
+.swal2-popup { font-family: inherit; border-radius: 1rem; }
+.swal-brand-title { color: #3B0764; font-weight: 800; }
+.swal-brand-btn { border-radius: 9999px !important; font-weight: 600 !important; padding: 0.6rem 1.4rem !important; }
+.swal2-timer-progress-bar { background: #DB2777 !important; }
+.swal2-icon.swal2-success [class^='swal2-success-line'] { background-color: #DB2777 !important; }
+.swal2-icon.swal2-success .swal2-success-ring { border-color: rgba(219,39,119,.3) !important; }

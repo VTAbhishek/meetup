@@ -1,0 +1,246 @@
+[2026-07-13 16:42:23] to=visal theekshana <visaltheekshana@gmail.com>
+subject=Your reservation with companyy is confirmed — Meetup
+======================================================================
+
+<div style="background:#f1f5f9;padding:24px 0;font-family:Segoe UI,Arial,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
+    <div style="background:linear-gradient(120deg,#3f5bff,#7c3aed);padding:22px 28px;">
+      <div style="color:#ffffff;font-size:20px;font-weight:800;">Meetup</div>
+      <div style="color:#e0e7ff;font-size:13px;margin-top:2px;">Reservation receipt</div>
+    </div>
+
+    <div style="padding:26px 28px;">
+      <div style="display:inline-block;background:#dcfce7;color:#15803d;font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px;">✓ Reservation confirmed</div>
+      <h2 style="margin:14px 0 4px;color:#0f172a;font-size:20px;">Booking with companyy</h2>
+      <p style="margin:0;color:#64748b;font-size:14px;">Your reservation has been confirmed. Here are the details:</p>
+
+      <table style="width:100%;border-collapse:collapse;margin-top:18px;">
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Name</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">Mail Test</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Mobile</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">0781311850</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Date</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">Saturday, July 25, 2026</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Time</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">18:00 – 20:00</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Members</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">4</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Notes</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">Birthday dinner</td></tr>
+      </table>
+
+      <div style="margin-top:16px;padding:12px 14px;background:#f8fafc;border-left:3px solid #16a34a;border-radius:8px;"><div style="font-size:12px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.04em;">Message from companyy</div><div style="margin-top:4px;color:#334155;font-size:14px;">Table booked, see you then!</div></div>
+
+      <div style="margin-top:22px;padding-top:16px;border-top:1px solid #eef2f7;">
+        <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Company details</div>
+        <div style="margin-top:6px;color:#0f172a;font-size:15px;font-weight:700;">companyy</div>
+        <table style="margin-top:6px;"></table>
+      </div>
+    </div>
+
+    <div style="padding:16px 28px;background:#f8fafc;border-top:1px solid #eef2f7;color:#94a3b8;font-size:12px;text-align:center;">
+      This receipt was sent by Meetup. Please keep it for your records.
+    </div>
+  </div>
+</div>
+======================================================================
+
+[2026-07-13 16:52:59] (SENT via SMTP) to=Visal Theekshana <visaltheekshana555@gmail.com>
+subject=TEST — Reservation confirmed — Meetup
+======================================================================
+
+<div style="background:#f1f5f9;padding:24px 0;font-family:Segoe UI,Arial,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
+    <div style="background:linear-gradient(120deg,#3f5bff,#7c3aed);padding:22px 28px;">
+      <div style="color:#ffffff;font-size:20px;font-weight:800;">Meetup</div>
+      <div style="color:#e0e7ff;font-size:13px;margin-top:2px;">Reservation receipt</div>
+    </div>
+
+    <div style="padding:26px 28px;">
+      <div style="display:inline-block;background:#dcfce7;color:#15803d;font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px;">✓ Reservation confirmed</div>
+      <h2 style="margin:14px 0 4px;color:#0f172a;font-size:20px;">Booking with companyy</h2>
+      <p style="margin:0;color:#64748b;font-size:14px;">Your reservation has been confirmed. Here are the details:</p>
+
+      <table style="width:100%;border-collapse:collapse;margin-top:18px;">
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Name</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">Visal Theekshana</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Mobile</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">0781311850</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Date</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">Saturday, July 25, 2026</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Time</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">18:00 – 20:00</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Members</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">4</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Notes</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">Test delivery — birthday dinner</td></tr>
+      </table>
+
+      <div style="margin-top:16px;padding:12px 14px;background:#f8fafc;border-left:3px solid #16a34a;border-radius:8px;"><div style="font-size:12px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.04em;">Message from companyy</div><div style="margin-top:4px;color:#334155;font-size:14px;">Table booked, see you then!</div></div>
+
+      <div style="margin-top:22px;padding-top:16px;border-top:1px solid #eef2f7;">
+        <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Company details</div>
+        <div style="margin-top:6px;color:#0f172a;font-size:15px;font-weight:700;">companyy</div>
+        <table style="margin-top:6px;"><tr><td style="padding:2px 12px 2px 0;color:#64748b;font-size:13px;">Category</td><td style="padding:2px 0;color:#0f172a;font-size:13px;font-weight:600;">Bank</td></tr><tr><td style="padding:2px 12px 2px 0;color:#64748b;font-size:13px;">Phone</td><td style="padding:2px 0;color:#0f172a;font-size:13px;font-weight:600;">0781311850</td></tr><tr><td style="padding:2px 12px 2px 0;color:#64748b;font-size:13px;">Website</td><td style="padding:2px 0;color:#0f172a;font-size:13px;font-weight:600;">companyy.com</td></tr><tr><td style="padding:2px 12px 2px 0;color:#64748b;font-size:13px;">Address</td><td style="padding:2px 0;color:#0f172a;font-size:13px;font-weight:600;">Kottawa, Colombo</td></tr></table>
+      </div>
+    </div>
+
+    <div style="padding:16px 28px;background:#f8fafc;border-top:1px solid #eef2f7;color:#94a3b8;font-size:12px;text-align:center;">
+      This receipt was sent by Meetup. Please keep it for your records.
+    </div>
+  </div>
+</div>
+======================================================================
+
+[2026-07-13 17:10:00] (SENT via SMTP) to=Visal Theekshana <visaltheekshana555@gmail.com>
+subject=Your reservation with companyy is confirmed — Meetup
+======================================================================
+
+<div style="background:#f1f5f9;padding:24px 0;font-family:Segoe UI,Arial,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
+    <div style="background:linear-gradient(120deg,#3f5bff,#7c3aed);padding:22px 28px;">
+      <div style="color:#ffffff;font-size:20px;font-weight:800;">Meetup</div>
+      <div style="color:#e0e7ff;font-size:13px;margin-top:2px;">Reservation receipt</div>
+    </div>
+
+    <div style="padding:26px 28px;">
+      <div style="display:inline-block;background:#dcfce7;color:#15803d;font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px;">✓ Reservation confirmed</div>
+      <h2 style="margin:14px 0 4px;color:#0f172a;font-size:20px;">Booking with companyy</h2>
+      <p style="margin:0;color:#64748b;font-size:14px;">Your reservation has been confirmed. Here are the details:</p>
+
+      <table style="width:100%;border-collapse:collapse;margin-top:18px;">
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Name</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">Visal Theekshana</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Mobile</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">0781311850</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Date</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">Saturday, July 25, 2026</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Time</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">18:00 – 20:00</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Members</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">4</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Notes</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">Birthday dinner</td></tr>
+      </table>
+
+      <div style="margin-top:16px;padding:12px 14px;background:#f8fafc;border-left:3px solid #16a34a;border-radius:8px;"><div style="font-size:12px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.04em;">Message from companyy</div><div style="margin-top:4px;color:#334155;font-size:14px;">Table booked, see you then!</div></div>
+
+      <div style="margin-top:22px;padding-top:16px;border-top:1px solid #eef2f7;">
+        <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Company details</div>
+        <div style="margin-top:6px;color:#0f172a;font-size:15px;font-weight:700;">companyy</div>
+        <table style="margin-top:6px;"><tr><td style="padding:2px 12px 2px 0;color:#64748b;font-size:13px;">Category</td><td style="padding:2px 0;color:#0f172a;font-size:13px;font-weight:600;">Bank</td></tr><tr><td style="padding:2px 12px 2px 0;color:#64748b;font-size:13px;">Phone</td><td style="padding:2px 0;color:#0f172a;font-size:13px;font-weight:600;">0781311850</td></tr><tr><td style="padding:2px 12px 2px 0;color:#64748b;font-size:13px;">Website</td><td style="padding:2px 0;color:#0f172a;font-size:13px;font-weight:600;">companyy.com</td></tr><tr><td style="padding:2px 12px 2px 0;color:#64748b;font-size:13px;">Address</td><td style="padding:2px 0;color:#0f172a;font-size:13px;font-weight:600;">Kottawa, Colombo</td></tr></table>
+      </div>
+    </div>
+
+    <div style="padding:16px 28px;background:#f8fafc;border-top:1px solid #eef2f7;color:#94a3b8;font-size:12px;text-align:center;">
+      This receipt was sent by Meetup. Please keep it for your records.
+    </div>
+  </div>
+</div>
+======================================================================
+
+[2026-07-13 17:40:50] (SENT via SMTP) to=avishka prabath <avishka03prabath2002@gmail.com>
+subject=Your reservation with companyy is confirmed — Meetup
+======================================================================
+
+<div style="background:#f1f5f9;padding:24px 0;font-family:Segoe UI,Arial,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
+    <div style="background:linear-gradient(120deg,#3f5bff,#7c3aed);padding:22px 28px;">
+      <div style="color:#ffffff;font-size:20px;font-weight:800;">Meetup</div>
+      <div style="color:#e0e7ff;font-size:13px;margin-top:2px;">Reservation receipt</div>
+    </div>
+
+    <div style="padding:26px 28px;">
+      <div style="display:inline-block;background:#dcfce7;color:#15803d;font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px;">✓ Reservation confirmed</div>
+      <h2 style="margin:14px 0 4px;color:#0f172a;font-size:20px;">Booking with companyy</h2>
+      <p style="margin:0;color:#64748b;font-size:14px;">Your reservation has been confirmed. Here are the details:</p>
+
+      <table style="width:100%;border-collapse:collapse;margin-top:18px;">
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Name</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">avishka prabath</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Mobile</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">016565162131</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Date</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">Monday, July 13, 2026</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Time</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">10:00 – 11:00</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Members</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">1</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Notes</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">hjsbxkjakjcka</td></tr>
+      </table>
+
+      
+
+      <div style="margin-top:22px;padding-top:16px;border-top:1px solid #eef2f7;">
+        <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Company details</div>
+        <div style="margin-top:6px;color:#0f172a;font-size:15px;font-weight:700;">companyy</div>
+        <table style="margin-top:6px;"></table>
+      </div>
+    </div>
+
+    <div style="padding:16px 28px;background:#f8fafc;border-top:1px solid #eef2f7;color:#94a3b8;font-size:12px;text-align:center;">
+      This receipt was sent by Meetup. Please keep it for your records.
+    </div>
+  </div>
+</div>
+======================================================================
+
+[2026-07-14 09:10:41] (SENT via SMTP) to=theekshana <2305S0345@saegis.ac.lk>
+subject=Your reservation with companyy is confirmed — Meetup
+======================================================================
+
+<div style="background:#f1f5f9;padding:24px 0;font-family:Segoe UI,Arial,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
+    <div style="background:linear-gradient(120deg,#3f5bff,#7c3aed);padding:22px 28px;">
+      <div style="color:#ffffff;font-size:20px;font-weight:800;">Meetup</div>
+      <div style="color:#e0e7ff;font-size:13px;margin-top:2px;">Reservation receipt</div>
+    </div>
+
+    <div style="padding:26px 28px;">
+      <div style="display:inline-block;background:#dcfce7;color:#15803d;font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px;">✓ Reservation confirmed</div>
+      <h2 style="margin:14px 0 4px;color:#0f172a;font-size:20px;">Booking with companyy</h2>
+      <p style="margin:0;color:#64748b;font-size:14px;">Your reservation has been confirmed. Here are the details:</p>
+
+      <table style="width:100%;border-collapse:collapse;margin-top:18px;">
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Name</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">theekshana</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Mobile</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">0781311855</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Date</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">Tuesday, July 14, 2026</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Time</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">10:00 – 11:00</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Members</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">1</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Notes</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">dakjbkjbvkjc,sn</td></tr>
+      </table>
+
+      
+
+      <div style="margin-top:22px;padding-top:16px;border-top:1px solid #eef2f7;">
+        <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Company details</div>
+        <div style="margin-top:6px;color:#0f172a;font-size:15px;font-weight:700;">companyy</div>
+        <table style="margin-top:6px;"></table>
+      </div>
+    </div>
+
+    <div style="padding:16px 28px;background:#f8fafc;border-top:1px solid #eef2f7;color:#94a3b8;font-size:12px;text-align:center;">
+      This receipt was sent by Meetup. Please keep it for your records.
+    </div>
+  </div>
+</div>
+======================================================================
+
+[2026-07-14 09:16:27] (SENT via SMTP) to=theekshana <2305S0345@saegis.ac.lk>
+subject=Your reservation with companyy is confirmed — Meetup
+======================================================================
+
+<div style="background:#f1f5f9;padding:24px 0;font-family:Segoe UI,Arial,sans-serif;">
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
+    <div style="background:linear-gradient(120deg,#3f5bff,#7c3aed);padding:22px 28px;">
+      <div style="color:#ffffff;font-size:20px;font-weight:800;">Meetup</div>
+      <div style="color:#e0e7ff;font-size:13px;margin-top:2px;">Reservation receipt</div>
+    </div>
+
+    <div style="padding:26px 28px;">
+      <div style="display:inline-block;background:#dcfce7;color:#15803d;font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px;">✓ Reservation confirmed</div>
+      <h2 style="margin:14px 0 4px;color:#0f172a;font-size:20px;">Booking with companyy</h2>
+      <p style="margin:0;color:#64748b;font-size:14px;">Your reservation has been confirmed. Here are the details:</p>
+
+      <table style="width:100%;border-collapse:collapse;margin-top:18px;">
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Name</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">theekshana</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Mobile</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">0781311855</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Date</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">Tuesday, July 14, 2026</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Time</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">10:00 – 11:00</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Members</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">5</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#64748b;font-size:14px;">Notes</td><td style="padding:8px 0;border-bottom:1px solid #eef2f7;color:#0f172a;font-size:14px;font-weight:600;text-align:right;">kjkjkhbkjbkb</td></tr>
+      </table>
+
+      <div style="margin-top:16px;padding:12px 14px;background:#f8fafc;border-left:3px solid #16a34a;border-radius:8px;"><div style="font-size:12px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.04em;">Message from companyy</div><div style="margin-top:4px;color:#334155;font-size:14px;">kjskjnlakjnl</div></div>
+
+      <div style="margin-top:22px;padding-top:16px;border-top:1px solid #eef2f7;">
+        <div style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Company details</div>
+        <div style="margin-top:6px;color:#0f172a;font-size:15px;font-weight:700;">companyy</div>
+        <table style="margin-top:6px;"></table>
+      </div>
+    </div>
+
+    <div style="padding:16px 28px;background:#f8fafc;border-top:1px solid #eef2f7;color:#94a3b8;font-size:12px;text-align:center;">
+      This receipt was sent by Meetup. Please keep it for your records.
+    </div>
+  </div>
+</div>
+======================================================================
+

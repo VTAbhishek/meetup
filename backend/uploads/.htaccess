@@ -1,0 +1,8 @@
+# Allow cross-origin reads of uploaded assets so the frontend (Vite dev server
+# on a different port) can draw cover images onto a <canvas> without tainting it
+# when generating the cover video. Same-origin in production is unaffected.
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, OPTIONS"
+    Header set Cross-Origin-Resource-Policy "cross-origin"
+</IfModule>

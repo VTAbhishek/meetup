@@ -1,0 +1,24 @@
+[2026-06-23 10:46:09] To: visaltheekshana555@gmail.com
+Verify: http://localhost/Company/verify.php?token=3eb8eab680a631937d563180d52019b7&type=customer
+
+[2026-06-23 10:48:59] To: visaltheekshana555@gmail.com
+Verify: http://localhost/Company/verify.php?token=5ff5ab6300888c06906e9c1419f5c3dc&type=customer
+
+[2026-06-23 10:49:50] To: swaltest_1782204590@x.com
+Verify: http://127.0.0.1:8767/verify.php?token=99580b4929385694f36509b9792e58bb&type=customer
+
+[2026-06-23 10:52:39] To: visaltheekshana555@gmail.com
+Verify: http://localhost/Company/verify.php?token=2655e4ca3de34d526a8b0943ae4e99fb&type=customer
+
+[2026-06-23 10:56:08] To: user_1782204968@x.com
+Verify: http://127.0.0.1:8768/verify.php?token=fd0ff2106e98691fc18720b2bc7aba89&type=customer
+
+[2026-06-23 10:57:50] To: visaltheekshana555@gmail.com
+Verify: http://localhost/Company/verify.php?token=d6de1250b85247521cfd275f94ef6359&type=customer
+
+[2026-06-23 10:59:58] To: rm_1782205198@x.com
+Verify: http://127.0.0.1:8769/verify.php?token=71f50bec7cad5f3ec706b1974cc2b8da&type=customer
+
+[2026-06-23 11:02:44] To: nov_1782205364@x.com
+Verify: http://127.0.0.1:8770/verify.php?token=955d6618244c44f3087aa9b538578332&type=customer
+

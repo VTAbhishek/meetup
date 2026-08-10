@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Build output
+frontend/dist/
+
+# Local secrets — copy mail.example.php to mail.php and fill in SMTP credentials
+backend/config/mail.php
+
+# OS / editor cruft
+Thumbs.db
+.DS_Store
+*.swp
+.vscode/
+.idea/

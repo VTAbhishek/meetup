@@ -1,0 +1,12 @@
+# Allow larger uploads (cover gallery supports up to 20 MB per image and the
+# generated cover video up to 60 MB; raise the per-file and total request sizes
+# accordingly).
+# Guarded so it's a no-op (not a 500) if PHP isn't running as an Apache module.
+<IfModule php_module>
+    php_value upload_max_filesize 64M
+    php_value post_max_size 128M
+</IfModule>
+<IfModule mod_php.c>
+    php_value upload_max_filesize 64M
+    php_value post_max_size 128M
+</IfModule>
