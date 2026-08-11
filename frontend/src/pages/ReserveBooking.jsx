@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { CalendarClock, ArrowLeft, Users, Phone, User, ClipboardList, Check, UtensilsCrossed, Plus, Minus, ShoppingCart, Trash2, X } from 'lucide-react'
+import { CalendarClock, ArrowLeft, Users, Phone, User, ClipboardList, Check, UtensilsCrossed, Plus, Minus, ShoppingCart, Trash2, X, Armchair, Info } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../auth'
 import { toastOk, alertErr } from '../alerts'
@@ -30,6 +30,12 @@ export default function ReserveBooking() {
   const [cart, setCart] = useState({}) // { [itemId]: qty }
   const [detail, setDetail] = useState(null) // menu item shown in the detail card
 
+  // ---- Tables ----
+  const [tableData, setTableData] = useState({ categories: [], tables: [] })
+  const [tableCat, setTableCat] = useState('')   // chosen category, '' = none yet
+  const [tableId, setTableId] = useState(0)      // chosen table, 0 = none
+  const [tableDetail, setTableDetail] = useState(null) // table shown in the pop-up card
+
   const today = new Date().toISOString().slice(0, 10)
   const [form, setForm] = useState({
     name: user?.full_name || '',
@@ -52,6 +58,23 @@ export default function ReserveBooking() {
     api.menu(slug).then(setMenu).catch(() => setMenu({ categories: [], items: [] }))
   }, [slug])
 
+  // Reload the tables whenever the slot changes — the API marks which ones are
+  // already booked for exactly that date and time range.
+  useEffect(() => {
+    let stale = false
+    api
+      .tables(slug, { date: form.res_date, from: form.time_from, to: form.time_to })
+      .then((d) => {
+        if (stale) return
+        setTableData(d)
+        // A table the customer had picked may have just been taken by someone
+        // else (or hidden by the company) — drop it rather than fail on submit.
+        setTableId((id) => (id && d.tables.some((t) => t.id === id && !t.booked) ? id : 0))
+      })
+      .catch(() => !stale && setTableData({ categories: [], tables: [] }))
+    return () => { stale = true }
+  }, [slug, form.res_date, form.time_from, form.time_to])
+
   const itemsById = useMemo(() => Object.fromEntries(menu.items.map((i) => [i.id, i])), [menu])
   const shownItems = useMemo(
     () => (cat === 'all' ? menu.items : menu.items.filter((i) => i.category === cat)),
@@ -67,6 +90,17 @@ export default function ReserveBooking() {
   const setQty = (id, q) => setCart((c) => ({ ...c, [id]: Math.max(0, Math.min(99, q)) }))
   const add = (id) => setQty(id, (cart[id] || 0) + 1)
 
+  // Tables in the chosen category, and the one currently selected.
+  const catTables = useMemo(
+    () => (tableCat ? tableData.tables.filter((t) => t.category === tableCat) : []),
+    [tableData, tableCat]
+  )
+  const selectedTable = useMemo(
+    () => tableData.tables.find((t) => t.id === tableId) || null,
+    [tableData, tableId]
+  )
+  const hasTables = tableData.tables.length > 0
+
   const submit = async (e) => {
     e.preventDefault()
     if (!company) return
@@ -74,7 +108,13 @@ export default function ReserveBooking() {
     setBusy(true)
     try {
       const items = cartLines.map((l) => ({ menu_item_id: l.item.id, qty: l.qty }))
-      await api.createReservation({ company_id: company.id, ...form, person_count: Number(form.person_count), items })
+      await api.createReservation({
+        company_id: company.id,
+        ...form,
+        person_count: Number(form.person_count),
+        table_id: tableId || null,
+        items,
+      })
       toastOk('Reservation sent')
       setDone(true)
     } catch (err) {
@@ -102,6 +142,12 @@ export default function ReserveBooking() {
           {cartCount > 0 ? ' and pre-order' : ''} and reply.
           You'll get a notification (🔔) when they respond.
         </p>
+        {selectedTable && (
+          <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-brand-silver px-3 py-1 text-sm font-semibold text-brand-navy">
+            <Armchair size={15} className="text-brand-green" />
+            Table {selectedTable.table_no} · {selectedTable.category}
+          </p>
+        )}
         <div className="mt-6 flex justify-center gap-2">
           <Link to="/" className="btn-blue py-2.5 text-sm">Go to home page</Link>
           <Link to={backTo} className="btn-ghost py-2.5 text-sm">Back to company</Link>
@@ -191,6 +237,95 @@ export default function ReserveBooking() {
             </div>
           </div>
 
+          {/* Table picker — pick a category, then a table. Only shown when the
+              company has set tables up; picking one stays optional. */}
+          {hasTables && (
+            <div className="card mt-6 p-6 sm:p-8">
+              <h2 className="flex items-center gap-2 text-lg font-extrabold text-brand-navy">
+                <Armchair size={20} className="text-brand-green" /> Choose your table
+                <span className="text-sm font-normal text-slate-400">(optional)</span>
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Tables already booked for your date and time are shown as unavailable.
+              </p>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <Field label="Table category" icon={Armchair}>
+                  <select
+                    value={tableCat}
+                    onChange={(e) => { setTableCat(e.target.value); setTableId(0) }}
+                    className="input"
+                  >
+                    <option value="">Select a category</option>
+                    {tableData.categories.map((c) => {
+                      const free = tableData.tables.filter((t) => t.category === c && !t.booked).length
+                      return (
+                        <option key={c} value={c}>
+                          {c} ({free} free)
+                        </option>
+                      )
+                    })}
+                  </select>
+                </Field>
+
+                <Field label="Table" error={errors.table_id}>
+                  <select
+                    value={tableId}
+                    disabled={!tableCat}
+                    onChange={(e) => setTableId(Number(e.target.value))}
+                    className="input disabled:bg-slate-50 disabled:text-slate-400"
+                  >
+                    <option value={0}>{tableCat ? 'Select a table' : 'Choose a category first'}</option>
+                    {catTables.map((t) => (
+                      <option key={t.id} value={t.id} disabled={t.booked}>
+                        Table {t.table_no} · {t.seats} {t.seats === 1 ? 'seat' : 'seats'}
+                        {t.booked ? ' — already booked' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+
+              {/* Preview card for the picked table — click for the full photo */}
+              {selectedTable ? (
+                <button
+                  type="button"
+                  onClick={() => setTableDetail(selectedTable)}
+                  title="Click to view this table"
+                  className="mt-4 flex w-full items-center gap-3 rounded-xl border border-brand-blue/40 bg-brand-silver/40 p-3 text-left transition hover:border-brand-blue hover:shadow-sm"
+                >
+                  {selectedTable.image_url ? (
+                    <img
+                      src={selectedTable.image_url}
+                      alt={`Table ${selectedTable.table_no}`}
+                      className="h-16 w-20 shrink-0 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-16 w-20 shrink-0 items-center justify-center rounded-lg bg-white text-slate-300">
+                      <Armchair size={22} />
+                    </span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-extrabold text-brand-navy">Table {selectedTable.table_no}</p>
+                    <p className="text-sm text-slate-500">
+                      {selectedTable.category} · {selectedTable.seats} {selectedTable.seats === 1 ? 'seat' : 'seats'}
+                    </p>
+                    {selectedTable.note && <p className="truncate text-xs text-slate-400">{selectedTable.note}</p>}
+                  </div>
+                  <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-brand-blue">
+                    <Info size={14} /> View
+                  </span>
+                </button>
+              ) : (
+                tableCat && catTables.every((t) => t.booked) && (
+                  <p className="mt-4 rounded-xl border border-dashed border-slate-200 py-4 text-center text-sm text-slate-400">
+                    Every {tableCat} table is booked for this time. Try another category or a different time.
+                  </p>
+                )
+              )}
+            </div>
+          )}
+
           {/* Menu — browse by category, add to cart */}
           {hasMenu && (
             <div className="card mt-6 p-6 sm:p-8">
@@ -263,6 +398,23 @@ export default function ReserveBooking() {
               )}
             </h2>
 
+            {/* The picked table, echoed here so it's visible next to the submit button */}
+            {selectedTable && (
+              <div className="mt-3 flex items-center gap-2 rounded-lg bg-brand-silver/60 px-3 py-2 text-sm">
+                <Armchair size={15} className="shrink-0 text-brand-green" />
+                <span className="font-semibold text-brand-navy">Table {selectedTable.table_no}</span>
+                <span className="text-slate-500">· {selectedTable.category}</span>
+                <button
+                  type="button"
+                  onClick={() => { setTableId(0); setTableCat('') }}
+                  title="Remove table"
+                  className="ml-auto shrink-0 text-slate-300 hover:text-red-500"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            )}
+
             {cartLines.length === 0 ? (
               <p className="mt-3 text-sm text-slate-400">
                 {hasMenu ? 'No food added yet. Pre-ordering is optional — you can still just book a table.' : 'This company has no menu to pre-order from. You can still book a table.'}
@@ -312,6 +464,53 @@ export default function ReserveBooking() {
           onInc={() => setQty(detail.id, (cart[detail.id] || 0) + 1)}
         />
       )}
+
+      {tableDetail && <TableDetailCard table={tableDetail} onClose={() => setTableDetail(null)} />}
+    </div>
+  )
+}
+
+/** Pop-up card showing one table's photo, number, seats and note. */
+function TableDetailCard({ table, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-cardHover"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="relative">
+          {table.image_url ? (
+            <img src={table.image_url} alt={`Table ${table.table_no}`} className="h-52 w-full object-cover" />
+          ) : (
+            <div className="flex h-52 w-full items-center justify-center bg-brand-silver text-slate-300">
+              <Armchair size={48} />
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-slate-600 shadow hover:bg-white"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="p-5">
+          <span className="inline-block rounded-full bg-brand-silver px-2.5 py-0.5 text-xs font-semibold text-brand-blue">
+            {table.category}
+          </span>
+          <h3 className="mt-2 text-xl font-extrabold text-brand-navy">Table {table.table_no}</h3>
+          <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-slate-500">
+            <Users size={15} className="text-slate-400" />
+            {table.seats} {table.seats === 1 ? 'seat' : 'seats'}
+          </p>
+          {table.note && <p className="mt-2 text-sm text-slate-600">{table.note}</p>}
+
+          <button type="button" onClick={onClose} className="btn-blue mt-5 w-full py-2.5 text-sm">
+            <Check size={16} /> Keep this table
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

@@ -77,6 +77,13 @@ CREATE TABLE IF NOT EXISTS `companies` (
   `description`  TEXT DEFAULT NULL,
   `logo`         VARCHAR(255) DEFAULT NULL,
   `cover_video`  VARCHAR(255) DEFAULT NULL,  -- optional auto-generated cover montage (webm/mp4)
+
+  -- Map pin, set by dragging the marker in the business dashboard. NULL until
+  -- the company pins itself; the customer page hides the map while unset.
+  `latitude`     DECIMAL(10,7) DEFAULT NULL,
+  `longitude`    DECIMAL(10,7) DEFAULT NULL,
+  `map_zoom`     TINYINT UNSIGNED NOT NULL DEFAULT 16,
+
   `is_approved`  TINYINT(1) NOT NULL DEFAULT 0,
   `created_at`   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
@@ -182,6 +189,28 @@ CREATE TABLE IF NOT EXISTS `review_replies` (
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
+--  Bookable tables. A company groups its tables into categories
+--  (VIP / Family / Couple / …), each with a number and an optional photo.
+--  Customers pick a category, then a table, in the reservation form.
+--  Declared before `reservations`, which references it.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `company_tables` (
+  `id`         INT AUTO_INCREMENT PRIMARY KEY,
+  `company_id` INT NOT NULL,
+  `category`   VARCHAR(60)  NOT NULL,          -- e.g. VIP, Family, Couple
+  `table_no`   VARCHAR(30)  NOT NULL,          -- e.g. T-12
+  `seats`      INT NOT NULL DEFAULT 2,
+  `note`       VARCHAR(200) DEFAULT NULL,      -- e.g. "Window side, 2nd floor"
+  `image`      VARCHAR(255) DEFAULT NULL,
+  `is_active`  TINYINT(1) NOT NULL DEFAULT 1,  -- off = hidden from customers
+  `sort_order` INT NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uq_company_table_no` (`company_id`,`table_no`),
+  KEY `idx_company` (`company_id`),
+  FOREIGN KEY (`company_id`) REFERENCES `companies`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ------------------------------------------------------------
 --  Reservations / bookings a customer makes with a company
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `reservations` (
@@ -197,11 +226,21 @@ CREATE TABLE IF NOT EXISTS `reservations` (
   `description`  TEXT DEFAULT NULL,
   `status`       ENUM('pending','confirmed') NOT NULL DEFAULT 'pending',
   `reply`        TEXT DEFAULT NULL,   -- company's message back to the customer
+
+  -- Optional table booking. table_label snapshots "VIP · T-12" at booking time
+  -- so an old reservation still reads correctly if the table is later renamed
+  -- or deleted (which nulls table_id but leaves the label intact).
+  `table_id`     INT DEFAULT NULL,
+  `table_label`  VARCHAR(100) DEFAULT NULL,
+
   `created_at`   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   KEY `idx_company` (`company_id`),
   KEY `idx_customer` (`customer_id`),
+  KEY `idx_table` (`table_id`),
   FOREIGN KEY (`company_id`)  REFERENCES `companies`(`id`) ON DELETE CASCADE,
-  FOREIGN KEY (`customer_id`) REFERENCES `users`(`id`)     ON DELETE CASCADE
+  FOREIGN KEY (`customer_id`) REFERENCES `users`(`id`)     ON DELETE CASCADE,
+  CONSTRAINT `fk_reservation_table` FOREIGN KEY (`table_id`)
+    REFERENCES `company_tables`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------

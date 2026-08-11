@@ -72,6 +72,11 @@ json_out([
         'address'      => $company['address'],
         'district_name'=> $company['district_name'],
         'city_name'    => $company['city_name'],
+        // isset() guards a database that hasn't run migration 001 yet — an
+        // undefined key would emit a PHP warning that corrupts the JSON body.
+        'latitude'     => isset($company['latitude'])  ? (float) $company['latitude']  : null,
+        'longitude'    => isset($company['longitude']) ? (float) $company['longitude'] : null,
+        'map_zoom'     => (int) ($company['map_zoom'] ?? 16),
         'logo'         => $company['logo'],
         'logo_url'     => asset_url($company['logo']),
         'cover_video'     => $company['cover_video'] ?? null,

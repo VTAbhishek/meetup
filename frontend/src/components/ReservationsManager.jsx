@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CalendarClock, Users, Phone, Check, Clock, Trash2, CornerDownRight, Send, Filter, UtensilsCrossed } from 'lucide-react'
+import { CalendarClock, Users, Phone, Check, Clock, Trash2, CornerDownRight, Send, Filter, UtensilsCrossed, Armchair } from 'lucide-react'
 import { api } from '../api'
 import { toastOk, alertErr, confirmDelete } from '../alerts'
 import { timeAgo } from '../lib'
@@ -119,6 +119,12 @@ function ReservationRow({ r, onChanged }) {
             <span className="flex items-center gap-1.5"><CalendarClock size={14} className="text-slate-400" /> {dateLabel}, {r.time_from}–{r.time_to}</span>
             <span className="flex items-center gap-1.5"><Users size={14} className="text-slate-400" /> {r.person_count} {r.person_count === 1 ? 'person' : 'people'}</span>
             <a href={`tel:${r.mobile}`} className="flex items-center gap-1.5 hover:text-brand-blue"><Phone size={14} className="text-slate-400" /> {r.mobile}</a>
+            {/* table_label is snapshotted, so it survives the table being deleted */}
+            {r.table_label && (
+              <span className="flex items-center gap-1.5 font-semibold text-brand-navy">
+                <Armchair size={14} className="text-brand-green" /> {r.table_label}
+              </span>
+            )}
           </div>
           {r.description && <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">{r.description}</p>}
           {r.items?.length > 0 && (

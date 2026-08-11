@@ -70,6 +70,17 @@ export const api = {
   companies: (qs = '') => request(`companies.php${qs}`),
   company: (slug, qs = '') => request(`company.php?slug=${encodeURIComponent(slug)}${qs}`),
   menu: (slug) => request(`menu.php?slug=${encodeURIComponent(slug)}`),
+  // Bookable tables for the reservation picker. Passing a slot marks the tables
+  // already taken for it, so they can be shown as unavailable.
+  tables: (slug, slot) => {
+    const qs = new URLSearchParams({ slug })
+    if (slot?.date && slot?.from && slot?.to) {
+      qs.set('date', slot.date)
+      qs.set('from', slot.from)
+      qs.set('to', slot.to)
+    }
+    return request(`tables.php?${qs}`)
+  },
   categories: () => request('categories.php'),
   locations: () => request('locations.php'),
   recentReviews: (limit = 12) => request(`recent-reviews.php?limit=${limit}`),
@@ -107,6 +118,10 @@ export const api = {
   addMenuItem: (fd) => request('my-company-menu.php', { method: 'POST', body: fd, auth: true }),
   updateMenuItem: (id, b) => request(`my-company-menu.php?id=${id}`, { method: 'POST', body: b, auth: true }),
   deleteMenuItem: (id) => request(`my-company-menu.php?id=${id}`, { method: 'DELETE', auth: true }),
+  myTables: () => request('my-company-tables.php', { auth: true }),
+  addTable: (fd) => request('my-company-tables.php', { method: 'POST', body: fd, auth: true }),
+  updateTable: (id, b) => request(`my-company-tables.php?id=${id}`, { method: 'POST', body: b, auth: true }),
+  deleteTable: (id) => request(`my-company-tables.php?id=${id}`, { method: 'DELETE', auth: true }),
   uploadCompanyLogo: (file) => {
     const fd = new FormData()
     fd.append('logo', file)

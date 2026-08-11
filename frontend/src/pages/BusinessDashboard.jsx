@@ -12,6 +12,8 @@ import RichTextEditor from '../components/RichTextEditor'
 import HoursEditor from '../components/HoursEditor'
 import ShowcaseCards from '../components/ShowcaseCards'
 import MenuManager from '../components/MenuManager'
+import TableManager from '../components/TableManager'
+import MapPicker from '../components/MapPicker'
 import ReservationsManager from '../components/ReservationsManager'
 import DashboardHeader from '../components/DashboardHeader'
 import Spinner from '../components/Spinner'
@@ -140,11 +142,20 @@ export default function BusinessDashboard() {
             {/* Opening hours (weekly + today-only override) */}
             <HoursEditor />
 
+            {/* Map pin shown to customers on the public page */}
+            <MapPicker
+              company={data.company}
+              onSaved={(loc) => setData((d) => ({ ...d, company: { ...d.company, ...loc } }))}
+            />
+
             {/* Showcase cards (shown on the public page, click reveals 2nd image) */}
             <ShowcaseCards />
 
             {/* Menu items customers can pre-order (with availability switch) */}
             <MenuManager />
+
+            {/* Bookable tables, grouped by category (VIP / Family / Couple…) */}
+            <TableManager />
 
             {/* Reservations customers have requested */}
             <ReservationsManager />

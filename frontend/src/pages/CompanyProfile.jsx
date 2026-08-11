@@ -7,6 +7,7 @@ import ReviewCard from '../components/ReviewCard'
 import Spinner from '../components/Spinner'
 import Lightbox from '../components/Lightbox'
 import CoverCarousel from '../components/CoverCarousel'
+import MapView from '../components/MapView'
 import { colorFor, initials, ratingLabel } from '../lib'
 
 export default function CompanyProfile() {
@@ -259,6 +260,22 @@ export default function CompanyProfile() {
               </li>
             </ul>
           </div>
+
+          {/* Map — renders only when the company has pinned itself */}
+          {company.latitude != null && company.longitude != null && (
+            <div className="card p-6">
+              <h3 className="mb-3 flex items-center gap-2 font-bold text-brand-navy">
+                <MapPin size={16} className="text-brand-green" /> Find us
+              </h3>
+              <MapView
+                lat={company.latitude}
+                lng={company.longitude}
+                zoom={company.map_zoom}
+                name={company.company_name}
+                address={company.address}
+              />
+            </div>
+          )}
 
           {company.hours?.length > 0 && (
             <div className="card p-6">

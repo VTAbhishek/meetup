@@ -6,6 +6,7 @@
  *   GET ?mine=1     -> the logged-in COMPANY lists reservations it has received.
  */
 require_once __DIR__ . '/_bootstrap.php';
+require_once __DIR__ . '/../helpers/tables.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -20,8 +21,10 @@ if ($method === 'GET' && isset($_GET['mine'])) {
     if (!$cid) json_error('Company not found', 404);
 
     $rows = db()->prepare(
-        'SELECT r.*, u.full_name AS customer_name
-         FROM reservations r JOIN users u ON u.id = r.customer_id
+        'SELECT r.*, u.full_name AS customer_name, ct.image AS table_image
+         FROM reservations r
+         JOIN users u ON u.id = r.customer_id
+         LEFT JOIN company_tables ct ON ct.id = r.table_id
          WHERE r.company_id = ?
          ORDER BY (r.status = "pending") DESC, r.res_date DESC, r.time_from DESC'
     );
@@ -33,6 +36,11 @@ if ($method === 'GET' && isset($_GET['mine'])) {
         $r['person_count'] = (int) $r['person_count'];
         $r['time_from'] = substr($r['time_from'], 0, 5);
         $r['time_to'] = substr($r['time_to'], 0, 5);
+        // table_id is NULL once a booked table is deleted; table_label still
+        // shows what was booked at the time.
+        $r['table_id'] = $r['table_id'] !== null ? (int) $r['table_id'] : null;
+        $r['table_image_url'] = asset_url($r['table_image'] ?? null);
+        unset($r['table_image']);
         $r['items'] = [];
         $r['items_total'] = 0.0;
         return $r;
@@ -93,6 +101,24 @@ if ($method === 'POST') {
     $company = $c->fetch();
     if (!$company) $errors['company_id'] = 'Company not found.';
 
+    // Optional table booking. Picking a table is never required — companies
+    // that haven't set any up still take plain reservations — but a supplied
+    // table must belong to this company and still be active.
+    $tableId    = (int) ($in['table_id'] ?? 0);
+    $tableLabel = null;
+    if ($tableId > 0 && $company) {
+        $t = db()->prepare('SELECT * FROM company_tables WHERE id = ? AND company_id = ? AND is_active = 1');
+        $t->execute([$tableId, $companyId]);
+        $table = $t->fetch();
+        if (!$table) {
+            $errors['table_id'] = 'That table is no longer available. Please pick another.';
+        } else {
+            $tableLabel = company_table_label($table);
+        }
+    } else {
+        $tableId = 0;
+    }
+
     if ($errors) json_out(['errors' => $errors], 422);
 
     // Optional pre-ordered food: [{ menu_item_id, qty }]. We look each item up
@@ -114,11 +140,19 @@ if ($method === 'POST') {
 
     $pdo = db();
     $pdo->beginTransaction();
+    $clash = false;
     try {
+        // Re-check the table inside the transaction: someone else may have taken
+        // this slot between the customer loading the picker and submitting.
+        if ($tableId > 0 && in_array($tableId, booked_table_ids($pdo, $companyId, $date, $from, $to), true)) {
+            $clash = true;
+            throw new RuntimeException('table already booked');
+        }
+
         $pdo->prepare(
-            'INSERT INTO reservations (company_id, customer_id, name, mobile, res_date, time_from, time_to, person_count, description)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        )->execute([$companyId, $user['id'], $name, $mobile, $date, $from, $to, $persons, $desc ?: null]);
+            'INSERT INTO reservations (company_id, customer_id, name, mobile, res_date, time_from, time_to, person_count, description, table_id, table_label)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        )->execute([$companyId, $user['id'], $name, $mobile, $date, $from, $to, $persons, $desc ?: null, $tableId ?: null, $tableLabel]);
         $rid = (int) $pdo->lastInsertId();
 
         if ($lines) {
@@ -132,10 +166,18 @@ if ($method === 'POST') {
         $pdo->commit();
     } catch (Throwable $e) {
         $pdo->rollBack();
+        if ($clash) {
+            json_out(['errors' => ['table_id' => 'Sorry, that table was just booked for this time. Please pick another.']], 422);
+        }
         json_error('Could not save the reservation. Please try again.', 500);
     }
 
-    json_out(['id' => $rid, 'status' => 'pending', 'items' => count($lines)], 201);
+    json_out([
+        'id'          => $rid,
+        'status'      => 'pending',
+        'items'       => count($lines),
+        'table_label' => $tableLabel,
+    ], 201);
 }
 
 json_error('Method not allowed', 405);
