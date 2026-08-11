@@ -9,6 +9,7 @@ $q          = trim($_GET['q'] ?? '');
 $category    = trim($_GET['category'] ?? '');
 $districtId  = (int) ($_GET['district_id'] ?? 0);
 $cityId      = (int) ($_GET['city_id'] ?? 0);
+$mood        = trim($_GET['mood'] ?? '');   // mood slug, e.g. "late-night"
 $limit       = min(50, max(1, (int) ($_GET['limit'] ?? 24)));
 
 $where  = ["c.status = 'active'"]; // only active companies are public
@@ -29,6 +30,14 @@ if ($districtId > 0) {
 if ($cityId > 0) {
     $where[] = 'c.city_id = ?';
     $params[] = $cityId;
+}
+if ($mood !== '') {
+    // EXISTS rather than a join: joining company_moods would multiply the rows
+    // a company contributes and skew the AVG(rating) below.
+    $where[] = 'EXISTS (SELECT 1 FROM company_moods cm
+                        JOIN moods m ON m.id = cm.mood_id
+                        WHERE cm.company_id = c.id AND m.slug = ?)';
+    $params[] = $mood;
 }
 $whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
 
@@ -58,6 +67,31 @@ foreach ($rows as &$row) {
     $row['logo_url']     = asset_url($row['logo']);
     $row['cover_url']    = asset_url($row['cover']);
     $row['open_now']     = company_open_status(db(), $row['id'])['open_now'];
+    $row['moods']        = [];
     unset($row['logo'], $row['cover']);
 }
+unset($row); // break the reference before reusing the name below
+
+// Attach each company's mood tags in one round-trip rather than per row.
+if ($rows) {
+    $ids = array_column($rows, 'id');
+    $byId = [];
+    foreach ($rows as $i => $r) $byId[$r['id']] = $i;
+    $ph = implode(',', array_fill(0, count($ids), '?'));
+    $ms = db()->prepare(
+        "SELECT cm.company_id, m.slug, m.name, m.icon
+         FROM company_moods cm JOIN moods m ON m.id = cm.mood_id
+         WHERE cm.company_id IN ($ph)
+         ORDER BY m.sort_order, m.id"
+    );
+    $ms->execute($ids);
+    foreach ($ms->fetchAll() as $m) {
+        $rows[$byId[(int) $m['company_id']]]['moods'][] = [
+            'slug' => $m['slug'],
+            'name' => $m['name'],
+            'icon' => $m['icon'],
+        ];
+    }
+}
+
 json_out(['companies' => $rows]);

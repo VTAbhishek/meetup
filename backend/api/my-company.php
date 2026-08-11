@@ -2,6 +2,7 @@
 require_once __DIR__ . '/_bootstrap.php';
 require_once __DIR__ . '/../helpers/urls.php';
 require_once __DIR__ . '/../helpers/covers.php';
+require_once __DIR__ . '/../helpers/moods.php';
 
 $user = require_api_user();
 if ($user['user_type'] !== 'company') json_error('Forbidden', 403);
@@ -82,6 +83,7 @@ json_out([
         'cover_video'     => $company['cover_video'] ?? null,
         'cover_video_url' => asset_url($company['cover_video'] ?? null),
         'covers'       => company_cover_list(db(), $cid),
+        'moods'        => company_moods(db(), $cid),
         'status'       => $company['status'],
     ],
     'stats'   => [

@@ -14,6 +14,7 @@ import ShowcaseCards from '../components/ShowcaseCards'
 import MenuManager from '../components/MenuManager'
 import TableManager from '../components/TableManager'
 import MapPicker from '../components/MapPicker'
+import MoodPicker from '../components/MoodPicker'
 import ReservationsManager from '../components/ReservationsManager'
 import DashboardHeader from '../components/DashboardHeader'
 import Spinner from '../components/Spinner'
@@ -147,6 +148,9 @@ export default function BusinessDashboard() {
               company={data.company}
               onSaved={(loc) => setData((d) => ({ ...d, company: { ...d.company, ...loc } }))}
             />
+
+            {/* Mood tags customers filter by, set alongside the location */}
+            <MoodPicker />
 
             {/* Showcase cards (shown on the public page, click reveals 2nd image) */}
             <ShowcaseCards />

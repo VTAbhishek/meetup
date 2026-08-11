@@ -3,6 +3,7 @@ require_once __DIR__ . '/_bootstrap.php';
 require_once __DIR__ . '/../helpers/urls.php';
 require_once __DIR__ . '/../helpers/covers.php';
 require_once __DIR__ . '/../helpers/hours.php';
+require_once __DIR__ . '/../helpers/moods.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') json_error('Method not allowed', 405);
 
@@ -114,6 +115,7 @@ json_out([
             $s->execute([$cid]);
             return $s->fetchAll();
         })()),
+        'moods'        => company_moods(db(), $cid),
         'hours'        => array_values(company_weekly_hours(db(), $cid)),
         'open_status'  => company_open_status(db(), $cid),
         'claimed'      => (bool) $company['user_id'],

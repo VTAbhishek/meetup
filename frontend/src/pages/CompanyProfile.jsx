@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { PenLine, ExternalLink, BadgeCheck, MapPin, Phone, Globe, CalendarClock, Building2, Tag } from 'lucide-react'
+import { PenLine, ExternalLink, BadgeCheck, MapPin, Phone, Globe, CalendarClock, Building2, Tag, Sparkles } from 'lucide-react'
 import { api } from '../api'
 import { Stars } from '../components/Stars'
 import ReviewCard from '../components/ReviewCard'
@@ -260,6 +260,28 @@ export default function CompanyProfile() {
               </li>
             </ul>
           </div>
+
+          {/* Mood tags — each links to the same mood filter on search */}
+          {company.moods?.length > 0 && (
+            <div className="card p-6">
+              <h3 className="mb-3 flex items-center gap-2 font-bold text-brand-navy">
+                <Sparkles size={16} className="text-brand-green" /> Good for
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {company.moods.map((m) => (
+                  <Link
+                    key={m.slug}
+                    to={`/search?mood=${encodeURIComponent(m.slug)}`}
+                    title={m.hint || `Find more places for ${m.name}`}
+                    className="flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 transition hover:border-brand-green/50 hover:text-brand-navy"
+                  >
+                    <MoodIcon icon={m.icon} size={14} className="text-brand-green" />
+                    {m.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Map — renders only when the company has pinned itself */}
           {company.latitude != null && company.longitude != null && (

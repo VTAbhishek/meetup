@@ -83,6 +83,7 @@ export const api = {
   },
   categories: () => request('categories.php'),
   locations: () => request('locations.php'),
+  moods: () => request('moods.php'),
   recentReviews: (limit = 12) => request(`recent-reviews.php?limit=${limit}`),
 
   // ---- reviews ----
@@ -118,6 +119,8 @@ export const api = {
   addMenuItem: (fd) => request('my-company-menu.php', { method: 'POST', body: fd, auth: true }),
   updateMenuItem: (id, b) => request(`my-company-menu.php?id=${id}`, { method: 'POST', body: b, auth: true }),
   deleteMenuItem: (id) => request(`my-company-menu.php?id=${id}`, { method: 'DELETE', auth: true }),
+  myMoods: () => request('my-company-moods.php', { auth: true }),
+  saveMyMoods: (moodIds) => request('my-company-moods.php', { method: 'POST', body: { mood_ids: moodIds }, auth: true }),
   myTables: () => request('my-company-tables.php', { auth: true }),
   addTable: (fd) => request('my-company-tables.php', { method: 'POST', body: fd, auth: true }),
   updateTable: (id, b) => request(`my-company-tables.php?id=${id}`, { method: 'POST', body: b, auth: true }),

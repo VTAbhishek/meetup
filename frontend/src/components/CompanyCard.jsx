@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { MapPin } from 'lucide-react'
 import { Stars } from './Stars'
+import { MoodIcon } from '../lib/moodIcons'
 import { colorFor, initials, ratingLabel } from '../lib'
 
 export default function CompanyCard({ company }) {
@@ -64,6 +65,26 @@ export default function CompanyCard({ company }) {
             <span className="text-sm text-slate-400">({company.review_count.toLocaleString()})</span>
           </div>
           <p className="mt-1 text-xs font-semibold text-brand-green">{ratingLabel(company.avg_rating)}</p>
+
+          {/* Mood tags — capped at two so cards keep a consistent height */}
+          {company.moods?.length > 0 && (
+            <div className="mt-2.5 flex flex-wrap gap-1">
+              {company.moods.slice(0, 2).map((m) => (
+                <span
+                  key={m.slug}
+                  className="flex items-center gap-1 rounded-full bg-brand-silver px-2 py-0.5 text-[11px] font-semibold text-slate-600"
+                >
+                  <MoodIcon icon={m.icon} size={11} className="text-brand-green" />
+                  {m.name}
+                </span>
+              ))}
+              {company.moods.length > 2 && (
+                <span className="rounded-full bg-brand-silver px-2 py-0.5 text-[11px] font-semibold text-slate-500">
+                  +{company.moods.length - 2}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </Link>
     </motion.div>
