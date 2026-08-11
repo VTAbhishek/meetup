@@ -13,6 +13,12 @@
 require_once __DIR__ . '/_bootstrap.php';
 require_once __DIR__ . '/../helpers/tables.php';
 
+// The reservation form polls this endpoint every few seconds to keep the booked
+// flags live. A cached response would show a table as free after someone else
+// has taken it, which is exactly what the polling exists to prevent.
+header('Cache-Control: no-store, no-cache, must-revalidate');
+header('Pragma: no-cache');
+
 $slug = trim($_GET['slug'] ?? '');
 $cid  = (int) ($_GET['company_id'] ?? 0);
 

@@ -1,12 +1,15 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { CalendarClock, ArrowLeft, Users, Phone, User, ClipboardList, Check, UtensilsCrossed, Plus, Minus, ShoppingCart, Trash2, X, Armchair, Info } from 'lucide-react'
+import { CalendarClock, ArrowLeft, Users, Phone, User, ClipboardList, Check, UtensilsCrossed, Plus, Minus, ShoppingCart, Trash2, X, Armchair, Info, RefreshCw, AlertTriangle } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../auth'
-import { toastOk, alertErr } from '../alerts'
+import { toastOk, toastInfo, alertErr } from '../alerts'
 import Spinner from '../components/Spinner'
 
 const money = (n) => 'Rs ' + Number(n || 0).toLocaleString('en-LK', { minimumFractionDigits: 0 })
+
+/** How often the table availability re-checks itself while the form is open. */
+const TABLE_POLL_MS = 10000
 
 /**
  * Reservation / booking form. A logged-in customer picks a date, time range,
@@ -35,6 +38,16 @@ export default function ReserveBooking() {
   const [tableCat, setTableCat] = useState('')   // chosen category, '' = none yet
   const [tableId, setTableId] = useState(0)      // chosen table, 0 = none
   const [tableDetail, setTableDetail] = useState(null) // table shown in the pop-up card
+  const [tablesBusy, setTablesBusy] = useState(false)  // a refresh is in flight
+  const [tablesAt, setTablesAt] = useState(null)       // when availability last refreshed
+  const [takenNote, setTakenNote] = useState('')       // "someone just booked your table"
+  const [refreshKey, setRefreshKey] = useState(0)      // bump to force a re-check
+
+  // The poll runs on a timer and can't close over the latest state, so mirror
+  // the current selection into refs it can read.
+  const tableIdRef = useRef(0)
+  const tableLabelRef = useRef('')
+  tableIdRef.current = tableId
 
   const today = new Date().toISOString().slice(0, 10)
   const [form, setForm] = useState({
@@ -58,22 +71,62 @@ export default function ReserveBooking() {
     api.menu(slug).then(setMenu).catch(() => setMenu({ categories: [], items: [] }))
   }, [slug])
 
-  // Reload the tables whenever the slot changes — the API marks which ones are
-  // already booked for exactly that date and time range.
+  /**
+   * Keep table availability live. Two customers can have this form open at the
+   * same time, so a one-off fetch goes stale the moment one of them books —
+   * the other would pick a table that is already gone. We re-poll the slot on a
+   * timer, and immediately whenever the tab regains focus (a customer coming
+   * back to a form left open for ten minutes must not act on old data).
+   *
+   * The backend re-checks inside the insert transaction regardless; this is
+   * what makes the clash *visible* instead of a surprise on submit.
+   */
   useEffect(() => {
     let stale = false
-    api
-      .tables(slug, { date: form.res_date, from: form.time_from, to: form.time_to })
-      .then((d) => {
-        if (stale) return
-        setTableData(d)
-        // A table the customer had picked may have just been taken by someone
-        // else (or hidden by the company) — drop it rather than fail on submit.
-        setTableId((id) => (id && d.tables.some((t) => t.id === id && !t.booked) ? id : 0))
-      })
-      .catch(() => !stale && setTableData({ categories: [], tables: [] }))
-    return () => { stale = true }
-  }, [slug, form.res_date, form.time_from, form.time_to])
+    let timer = null
+
+    const load = () => {
+      // Don't poll a tab nobody is looking at — it resumes on focus below.
+      if (document.hidden) return
+      setTablesBusy(true)
+      api
+        .tables(slug, { date: form.res_date, from: form.time_from, to: form.time_to })
+        .then((d) => {
+          if (stale) return
+          setTableData(d)
+          setTablesAt(new Date())
+          // If the table this customer picked was just taken by someone else
+          // (or switched off by the company), clear it and say so out loud —
+          // silently dropping the selection is how people submit the wrong thing.
+          const mine = tableIdRef.current
+          if (mine && !d.tables.some((t) => t.id === mine && !t.booked)) {
+            setTableId(0)
+            setTakenNote(
+              tableLabelRef.current
+                ? `Table ${tableLabelRef.current} was just booked by someone else. Please pick another.`
+                : 'The table you picked is no longer available. Please pick another.'
+            )
+            toastInfo('That table was just taken')
+          }
+        })
+        .catch(() => !stale && setTableData({ categories: [], tables: [] }))
+        .finally(() => !stale && setTablesBusy(false))
+    }
+
+    load()
+    timer = setInterval(load, TABLE_POLL_MS)
+    // Re-check the moment the tab becomes visible again.
+    const onVisible = () => !document.hidden && load()
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+
+    return () => {
+      stale = true
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+    }
+  }, [slug, form.res_date, form.time_from, form.time_to, refreshKey])
 
   const itemsById = useMemo(() => Object.fromEntries(menu.items.map((i) => [i.id, i])), [menu])
   const shownItems = useMemo(
@@ -100,6 +153,9 @@ export default function ReserveBooking() {
     [tableData, tableId]
   )
   const hasTables = tableData.tables.length > 0
+  // Remembered so the "just taken" message can still name the table after the
+  // selection has been cleared.
+  if (selectedTable) tableLabelRef.current = selectedTable.table_no
 
   const submit = async (e) => {
     e.preventDefault()
@@ -118,8 +174,15 @@ export default function ReserveBooking() {
       toastOk('Reservation sent')
       setDone(true)
     } catch (err) {
-      if (err?.status === 422 && err.data?.errors) setErrors(err.data.errors)
-      else alertErr(err)
+      if (err?.status === 422 && err.data?.errors) {
+        setErrors(err.data.errors)
+        // Losing the table on submit means our view of the slot is out of date —
+        // re-check straight away so the picker shows the real state.
+        if (err.data.errors.table_id) {
+          setTableId(0)
+          setRefreshKey((k) => k + 1)
+        }
+      } else alertErr(err)
     } finally {
       setBusy(false)
     }
@@ -241,19 +304,50 @@ export default function ReserveBooking() {
               company has set tables up; picking one stays optional. */}
           {hasTables && (
             <div className="card mt-6 p-6 sm:p-8">
-              <h2 className="flex items-center gap-2 text-lg font-extrabold text-brand-navy">
-                <Armchair size={20} className="text-brand-green" /> Choose your table
-                <span className="text-sm font-normal text-slate-400">(optional)</span>
-              </h2>
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <h2 className="flex items-center gap-2 text-lg font-extrabold text-brand-navy">
+                  <Armchair size={20} className="text-brand-green" /> Choose your table
+                  <span className="text-sm font-normal text-slate-400">(optional)</span>
+                </h2>
+                {/* Live availability indicator — availability re-checks itself
+                    every few seconds, so a table booked by someone else while
+                    this form is open turns unavailable on its own. */}
+                <button
+                  type="button"
+                  onClick={() => setRefreshKey((k) => k + 1)}
+                  disabled={tablesBusy}
+                  title="Check availability again now"
+                  className="flex items-center gap-1.5 rounded-full bg-brand-silver/70 px-2.5 py-1 text-xs font-semibold text-slate-500 transition hover:bg-brand-silver hover:text-brand-navy disabled:opacity-60"
+                >
+                  <RefreshCw size={12} className={`text-brand-green ${tablesBusy ? 'animate-spin' : ''}`} />
+                  {tablesBusy ? 'Checking…' : tablesAt ? `Live · updated ${tablesAt.toLocaleTimeString()}` : 'Live'}
+                </button>
+              </div>
               <p className="mt-1 text-sm text-slate-500">
-                Tables already booked for your date and time are shown as unavailable.
+                Availability updates automatically. Tables already booked for your date and time are shown as
+                unavailable.
               </p>
+
+              {/* Shown when someone else books the table this customer had picked */}
+              {takenNote && (
+                <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                  <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                  <span className="flex-1">{takenNote}</span>
+                  <button
+                    type="button"
+                    onClick={() => setTakenNote('')}
+                    className="shrink-0 text-amber-400 hover:text-amber-700"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+              )}
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <Field label="Table category" icon={Armchair}>
                   <select
                     value={tableCat}
-                    onChange={(e) => { setTableCat(e.target.value); setTableId(0) }}
+                    onChange={(e) => { setTableCat(e.target.value); setTableId(0); setTakenNote('') }}
                     className="input"
                   >
                     <option value="">Select a category</option>
@@ -272,7 +366,7 @@ export default function ReserveBooking() {
                   <select
                     value={tableId}
                     disabled={!tableCat}
-                    onChange={(e) => setTableId(Number(e.target.value))}
+                    onChange={(e) => { setTableId(Number(e.target.value)); setTakenNote('') }}
                     className="input disabled:bg-slate-50 disabled:text-slate-400"
                   >
                     <option value={0}>{tableCat ? 'Select a table' : 'Choose a category first'}</option>
