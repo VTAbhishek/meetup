@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import { api } from '../api'
@@ -8,6 +8,7 @@ import { useLang } from '../i18n'
 import { useLocationCtx } from '../location'
 import SearchBar from '../components/SearchBar'
 import DistrictCityPicker from '../components/DistrictCityPicker'
+import MoodSelect from '../components/MoodSelect'
 import CompanyCard from '../components/CompanyCard'
 import ReviewCard from '../components/ReviewCard'
 import Carousel from '../components/Carousel'
@@ -15,10 +16,12 @@ import Spinner from '../components/Spinner'
 
 export default function Home() {
   const { t } = useLang()
+  const navigate = useNavigate()
   const { districts, districtId, cityId, setDistrict, setCity } = useLocationCtx()
   const [categories, setCategories] = useState([])
   const [companies, setCompanies] = useState([])
   const [reviews, setReviews] = useState([])
+  const [moods, setMoods] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -29,7 +32,19 @@ export default function Home() {
         setReviews(r.reviews)
       })
       .finally(() => setLoading(false))
+    // Fetched separately from the Promise.all above so a moods hiccup can't
+    // blank the whole home page — the dropdown simply doesn't render.
+    api.moods().then((d) => setMoods(d.moods)).catch(() => setMoods([]))
   }, [])
+
+  /**
+   * Hand off to the search page, which owns mood filtering and shows results
+   * best-rated first. The district and city ride along in the shared location
+   * context, so whatever is picked above is already applied.
+   */
+  const goToMood = (slug) => {
+    if (slug) navigate(`/search?mood=${encodeURIComponent(slug)}`)
+  }
 
   return (
     <div>
@@ -68,7 +83,7 @@ export default function Home() {
             className="mx-auto mt-8 max-w-2xl space-y-3"
           >
             <SearchBar placeholder={t('searchPlaceholder')} />
-            <div className="rounded-2xl bg-white/10 p-2 backdrop-blur-sm">
+            <div className="space-y-2 rounded-2xl bg-white/10 p-2 backdrop-blur-sm">
               <DistrictCityPicker
                 districts={districts}
                 districtId={districtId}
@@ -77,6 +92,9 @@ export default function Home() {
                 onCity={setCity}
                 dark
               />
+              {/* Picking a mood jumps straight to the filtered results. Kept
+                  unbound (value="") so it always reads as a fresh prompt. */}
+              <MoodSelect moods={moods} value="" onChange={goToMood} dark />
             </div>
           </motion.div>
         </div>
