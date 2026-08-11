@@ -1,25 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, Search, Crosshair, Trash2, Save, AlertTriangle } from 'lucide-react'
+import { MapPin, Search, Crosshair, Trash2, Save, Loader2 } from 'lucide-react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import { api } from '../api'
 import { toastOk, alertErr } from '../alerts'
-import { loadGoogleMaps, DEFAULT_CENTER, DEFAULT_ZOOM, round7 } from '../lib/googleMaps'
+import { DEFAULT_CENTER, DEFAULT_ZOOM, round7, searchPlaces } from '../lib/maps'
 
 /**
- * Business dashboard map picker. The company searches for its venue (Places
- * autocomplete), drags the pin to the exact spot, and saves. The saved pin is
- * what customers see on the public company page.
+ * Business dashboard map picker, drawn with Leaflet over OpenStreetMap tiles —
+ * no API key, no billing account. The company searches for its venue, clicks
+ * the map or drags the pin, and saves. The saved pin is what customers see on
+ * the public company page.
  *
  * `company` is the row from api.myCompany(); `onSaved` gets the new
- * { latitude, longitude, map_zoom } so the dashboard can update without a refetch.
+ * { latitude, longitude, map_zoom } so the dashboard updates without a refetch.
  */
 export default function MapPicker({ company, onSaved }) {
-  const boxRef = useRef(null)     // the div Google draws the map into
-  const searchRef = useRef(null)  // the autocomplete <input>
-  const mapRef = useRef(null)     // google.maps.Map
-  const markerRef = useRef(null)  // google.maps.Marker
+  const boxRef = useRef(null)      // the div Leaflet draws into
+  const mapRef = useRef(null)      // L.Map
+  const markerRef = useRef(null)   // L.Marker
 
-  const [ready, setReady] = useState(false)
-  const [loadError, setLoadError] = useState('')
   const [pos, setPos] = useState(
     company.latitude != null && company.longitude != null
       ? { lat: Number(company.latitude), lng: Number(company.longitude) }
@@ -27,94 +27,115 @@ export default function MapPicker({ company, onSaved }) {
   )
   const [busy, setBusy] = useState(false)
 
-  // Keep the latest position in a ref so the Google event listeners — which are
-  // attached once on mount — always read the current value instead of closing
-  // over the first render's state.
+  // ---- Place search ----
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState([])
+  const [searching, setSearching] = useState(false)
+  const [searched, setSearched] = useState(false)
+
+  // Leaflet listeners are attached once, so they read the pin through a ref
+  // rather than closing over the first render's state.
   const posRef = useRef(pos)
   posRef.current = pos
 
   useEffect(() => {
-    let cancelled = false
+    if (!boxRef.current || mapRef.current) return
 
-    loadGoogleMaps()
-      .then((google) => {
-        if (cancelled || !boxRef.current) return
+    const start = posRef.current || DEFAULT_CENTER
+    const map = L.map(boxRef.current).setView(
+      [start.lat, start.lng],
+      posRef.current ? company.map_zoom || DEFAULT_ZOOM : 12
+    )
+    mapRef.current = map
 
-        const start = posRef.current || DEFAULT_CENTER
-        const map = new google.maps.Map(boxRef.current, {
-          center: start,
-          zoom: posRef.current ? company.map_zoom || DEFAULT_ZOOM : 12,
-          mapTypeControl: false,
-          streetViewControl: false,
-          fullscreenControl: false,
-        })
-        mapRef.current = map
+    // OpenStreetMap requires visible attribution — do not remove.
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map)
 
-        const marker = new google.maps.Marker({
-          map,
-          position: start,
-          draggable: true,
-          visible: !!posRef.current, // hidden until the company drops a pin
-        })
-        markerRef.current = marker
+    // A div icon avoids Leaflet's bundler-hostile default marker images and
+    // lets the pin match the app's colours.
+    const icon = L.divIcon({
+      className: '',
+      html: `<svg width="30" height="42" viewBox="0 0 24 34" xmlns="http://www.w3.org/2000/svg">
+               <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 22 12 22s12-13 12-22c0-6.6-5.4-12-12-12z" fill="#16a34a"/>
+               <circle cx="12" cy="12" r="5" fill="#fff"/>
+             </svg>`,
+      iconSize: [30, 42],
+      iconAnchor: [15, 42],
+    })
 
-        const place = (latLng) => {
-          const next = { lat: round7(latLng.lat()), lng: round7(latLng.lng()) }
-          marker.setPosition(next)
-          marker.setVisible(true)
-          setPos(next)
-        }
+    const marker = L.marker([start.lat, start.lng], { draggable: true, icon })
+    if (posRef.current) marker.addTo(map)
+    markerRef.current = marker
 
-        marker.addListener('dragend', (e) => place(e.latLng))
-        map.addListener('click', (e) => place(e.latLng))
+    const place = (latlng) => {
+      const next = { lat: round7(latlng.lat), lng: round7(latlng.lng) }
+      marker.setLatLng(next)
+      if (!map.hasLayer(marker)) marker.addTo(map)
+      setPos(next)
+    }
 
-        // Places autocomplete on the search box, wired to move the pin.
-        if (searchRef.current) {
-          const ac = new google.maps.places.Autocomplete(searchRef.current, {
-            fields: ['geometry', 'name'],
-          })
-          ac.bindTo('bounds', map)
-          ac.addListener('place_changed', () => {
-            const p = ac.getPlace()
-            if (!p.geometry?.location) return
-            map.panTo(p.geometry.location)
-            map.setZoom(17)
-            place(p.geometry.location)
-          })
-        }
+    marker.on('dragend', () => place(marker.getLatLng()))
+    map.on('click', (e) => place(e.latlng))
 
-        setReady(true)
-      })
-      .catch((err) => !cancelled && setLoadError(err.message))
+    // The dashboard renders this card inside a growing page; Leaflet needs a
+    // nudge once the container has settled at its real height.
+    setTimeout(() => map.invalidateSize(), 0)
 
-    return () => { cancelled = true }
-    // Mount-only: the map is imperative and manages its own updates afterwards.
+    return () => {
+      map.remove()
+      mapRef.current = null
+      markerRef.current = null
+    }
+    // Mount-only: the map is imperative and manages itself afterwards.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  /** Centre on the device's current location and drop the pin there. */
+  /** Move the pin and recentre the map. */
+  const moveTo = (lat, lng, zoom = 17) => {
+    const next = { lat: round7(lat), lng: round7(lng) }
+    setPos(next)
+    const m = markerRef.current
+    const map = mapRef.current
+    if (m && map) {
+      m.setLatLng(next)
+      if (!map.hasLayer(m)) m.addTo(map)
+      map.setView([next.lat, next.lng], zoom)
+    }
+  }
+
+  const runSearch = async (e) => {
+    e?.preventDefault()
+    if (!query.trim()) return
+    setSearching(true)
+    setSearched(true)
+    try {
+      setResults(await searchPlaces(query))
+    } catch (err) {
+      alertErr(err)
+      setResults([])
+    } finally {
+      setSearching(false)
+    }
+  }
+
   const useMyLocation = () => {
     if (!navigator.geolocation) return alertErr('Your browser does not support location lookup.')
     navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        const next = { lat: round7(coords.latitude), lng: round7(coords.longitude) }
-        setPos(next)
-        markerRef.current?.setPosition(next)
-        markerRef.current?.setVisible(true)
-        mapRef.current?.panTo(next)
-        mapRef.current?.setZoom(17)
-      },
+      ({ coords }) => moveTo(coords.latitude, coords.longitude),
       () => alertErr('Could not read your location. Please allow location access, or drag the pin instead.')
     )
   }
 
-  const save = async () => {
-    if (!pos) return alertErr('Drop a pin on the map first — search for your venue or click the map.')
+  /**
+   * The update endpoint rewrites the whole profile row, so every field it owns
+   * has to be resent or it would be blanked out.
+   */
+  const saveWith = async (extra, okMsg) => {
     setBusy(true)
     try {
-      const zoom = mapRef.current?.getZoom() || DEFAULT_ZOOM
-      // The update endpoint rewrites the whole profile row, so resend the
-      // fields it also owns or they'd be blanked out.
       await api.updateMyCompany({
         company_name: company.company_name,
         website: company.website || '',
@@ -122,40 +143,32 @@ export default function MapPicker({ company, onSaved }) {
         phone: company.phone || '',
         address: company.address || '',
         description: company.description || '',
-        latitude: pos.lat,
-        longitude: pos.lng,
-        map_zoom: zoom,
+        ...extra,
       })
-      toastOk('Location saved')
-      onSaved?.({ latitude: pos.lat, longitude: pos.lng, map_zoom: zoom })
+      toastOk(okMsg)
+      return true
     } catch (err) {
       alertErr(err)
+      return false
     } finally {
       setBusy(false)
     }
   }
 
+  const save = async () => {
+    if (!pos) return alertErr('Drop a pin on the map first — search for your venue or click the map.')
+    const zoom = mapRef.current?.getZoom() || DEFAULT_ZOOM
+    if (await saveWith({ latitude: pos.lat, longitude: pos.lng, map_zoom: zoom }, 'Location saved')) {
+      onSaved?.({ latitude: pos.lat, longitude: pos.lng, map_zoom: zoom })
+    }
+  }
+
   const clear = async () => {
-    setBusy(true)
-    try {
-      await api.updateMyCompany({
-        company_name: company.company_name,
-        website: company.website || '',
-        category: company.category || '',
-        phone: company.phone || '',
-        address: company.address || '',
-        description: company.description || '',
-        latitude: null,
-        longitude: null,
-      })
+    if (await saveWith({ latitude: null, longitude: null }, 'Location removed')) {
       setPos(null)
-      markerRef.current?.setVisible(false)
-      toastOk('Location removed')
+      const m = markerRef.current
+      if (m && mapRef.current?.hasLayer(m)) mapRef.current.removeLayer(m)
       onSaved?.({ latitude: null, longitude: null, map_zoom: DEFAULT_ZOOM })
-    } catch (err) {
-      alertErr(err)
-    } finally {
-      setBusy(false)
     }
   }
 
@@ -167,8 +180,8 @@ export default function MapPicker({ company, onSaved }) {
             <MapPin size={18} className="text-brand-green" /> Location on the map
           </h2>
           <p className="text-sm text-slate-500">
-            Search for your venue or click the map, then drag the pin to the exact spot. Customers see this map
-            on your public page with a directions link.
+            Search for your venue, or click the map and drag the pin to the exact spot. Customers see this
+            location on your public page with a directions link.
           </p>
         </div>
         {pos && (
@@ -178,57 +191,66 @@ export default function MapPicker({ company, onSaved }) {
         )}
       </div>
 
-      {loadError ? (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          <AlertTriangle size={18} className="mt-0.5 shrink-0" />
-          <div>
-            <p className="font-semibold">Map unavailable</p>
-            <p className="mt-0.5">{loadError}</p>
-          </div>
+      {/* Search — runs on Enter or the button, never per keystroke, to stay
+          inside OpenStreetMap's one-request-per-second policy. */}
+      <div className="mb-3 flex flex-wrap gap-2">
+        <div className="relative min-w-[220px] flex-1">
+          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            className="input pl-9"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search your venue, street or city…"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault() // never submit a surrounding form
+                runSearch()
+              }
+            }}
+          />
         </div>
-      ) : (
-        <>
-          <div className="mb-3 flex flex-wrap gap-2">
-            <div className="relative min-w-[220px] flex-1">
-              <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                ref={searchRef}
-                className="input pl-9"
-                placeholder="Search your venue, street or city…"
-                // Enter would submit any wrapping form before Places responds.
-                onKeyDown={(e) => e.key === 'Enter' && e.preventDefault()}
-              />
-            </div>
-            <button type="button" onClick={useMyLocation} className="btn-ghost shrink-0 py-2 text-sm">
-              <Crosshair size={15} /> Use my location
-            </button>
-          </div>
+        <button type="button" onClick={runSearch} disabled={searching} className="btn-blue shrink-0 py-2 text-sm">
+          {searching ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />} Search
+        </button>
+        <button type="button" onClick={useMyLocation} className="btn-ghost shrink-0 py-2 text-sm">
+          <Crosshair size={15} /> Use my location
+        </button>
+      </div>
 
-          <div className="relative overflow-hidden rounded-xl border border-slate-200">
-            <div ref={boxRef} className="h-[340px] w-full bg-slate-100" />
-            {!ready && (
-              <div className="absolute inset-0 flex items-center justify-center bg-slate-100 text-sm text-slate-400">
-                Loading map…
-              </div>
-            )}
-          </div>
-
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-slate-500">
-              {pos ? (
-                <>
-                  Pin at <span className="font-semibold tabular-nums text-slate-700">{pos.lat.toFixed(5)}, {pos.lng.toFixed(5)}</span>
-                </>
-              ) : (
-                'No pin yet — search or click the map to drop one.'
-              )}
-            </p>
-            <button onClick={save} disabled={busy || !pos} className="btn-blue py-2 text-sm disabled:opacity-50">
-              <Save size={15} /> {busy ? 'Saving…' : 'Save location'}
-            </button>
-          </div>
-        </>
+      {results.length > 0 && (
+        <ul className="mb-3 max-h-40 divide-y divide-slate-100 overflow-y-auto rounded-xl border border-slate-200">
+          {results.map((r, i) => (
+            <li key={i}>
+              <button
+                type="button"
+                onClick={() => { moveTo(r.lat, r.lng); setResults([]); setQuery(r.label) }}
+                className="flex w-full items-start gap-2 px-3 py-2 text-left text-sm text-slate-600 hover:bg-brand-silver/60"
+              >
+                <MapPin size={14} className="mt-0.5 shrink-0 text-brand-green" />
+                <span>{r.label}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
+      {searched && !searching && results.length === 0 && (
+        <p className="mb-3 text-sm text-slate-400">No places matched. Try a broader search, or click the map directly.</p>
+      )}
+
+      <div ref={boxRef} className="h-[340px] w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100" />
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-slate-500">
+          {pos ? (
+            <>Pin at <span className="font-semibold tabular-nums text-slate-700">{pos.lat.toFixed(5)}, {pos.lng.toFixed(5)}</span></>
+          ) : (
+            'No pin yet — search or click the map to drop one.'
+          )}
+        </p>
+        <button onClick={save} disabled={busy || !pos} className="btn-blue py-2 text-sm disabled:opacity-50">
+          <Save size={15} /> {busy ? 'Saving…' : 'Save location'}
+        </button>
+      </div>
     </div>
   )
 }
