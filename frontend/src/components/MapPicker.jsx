@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { MapPin, Search, Crosshair, Trash2, Save, Loader2 } from 'lucide-react'
+import { MapPin, Search, Crosshair, Trash2, Save, Loader2, PersonStanding } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { api } from '../api'
 import { toastOk, alertErr } from '../alerts'
-import { DEFAULT_CENTER, DEFAULT_ZOOM, round7, searchPlaces } from '../lib/maps'
+import { DEFAULT_CENTER, DEFAULT_ZOOM, round7, searchPlaces, streetViewEmbedUrl, streetViewUrl } from '../lib/maps'
 
 /**
  * Business dashboard map picker, drawn with Leaflet over OpenStreetMap tiles —
@@ -180,8 +180,9 @@ export default function MapPicker({ company, onSaved }) {
             <MapPin size={18} className="text-brand-green" /> Location on the map
           </h2>
           <p className="text-sm text-slate-500">
-            Search for your venue, or click the map and drag the pin to the exact spot. Customers see this
-            location on your public page with a directions link.
+            Search for your venue, or click the map and drag the pin to the exact spot — the Street View beside
+            it follows the pin, so you can check you landed on the right building. Customers get this location
+            as a map, a Street View and a directions link on your public page.
           </p>
         </div>
         {pos && (
@@ -237,7 +238,56 @@ export default function MapPicker({ company, onSaved }) {
         <p className="mb-3 text-sm text-slate-400">No places matched. Try a broader search, or click the map directly.</p>
       )}
 
-      <div ref={boxRef} className="h-[340px] w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100" />
+      <div className="grid gap-3 lg:grid-cols-2">
+        <div ref={boxRef} className="h-[340px] w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100" />
+
+        {/* Street View of wherever the pin currently sits. It can't report a
+            position back, so the pin is still set on the map — this is the
+            check that it landed on the right building. */}
+        <div>
+          <div className="flex h-[340px] w-full items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+            {pos ? (
+              <iframe
+                // Re-keyed per position so the panorama reloads as the pin moves.
+                key={`${pos.lat},${pos.lng}`}
+                title="Street View of the pinned location"
+                src={streetViewEmbedUrl(pos.lat, pos.lng)}
+                width="100%"
+                height="340"
+                style={{ border: 0, display: 'block' }}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
+            ) : (
+              <p className="px-6 text-center text-sm text-slate-400">
+                Drop a pin and you'll see the spot at street level here.
+              </p>
+            )}
+          </div>
+
+          <p className="mt-2 flex items-start gap-1.5 text-xs text-slate-400">
+            <PersonStanding size={13} className="mt-0.5 shrink-0" />
+            <span>
+              Street level view — check it's your building before saving.
+              {pos && (
+                <>
+                  {' '}
+                  <a
+                    href={streetViewUrl(pos.lat, pos.lng)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold text-brand-blue hover:underline"
+                  >
+                    Open in Google Maps
+                  </a>
+                  {' '}if it looks empty here.
+                </>
+              )}
+            </span>
+          </p>
+        </div>
+      </div>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">

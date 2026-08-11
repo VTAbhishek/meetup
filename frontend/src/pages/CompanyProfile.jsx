@@ -8,6 +8,7 @@ import Spinner from '../components/Spinner'
 import Lightbox from '../components/Lightbox'
 import CoverCarousel from '../components/CoverCarousel'
 import MapView from '../components/MapView'
+import { MoodIcon } from '../lib/moodIcons'
 import { colorFor, initials, ratingLabel } from '../lib'
 
 export default function CompanyProfile() {

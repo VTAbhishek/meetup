@@ -22,6 +22,25 @@ export const embedUrl = (lat, lng, zoom = DEFAULT_ZOOM) =>
   `https://maps.google.com/maps?q=${lat},${lng}&z=${zoom}&hl=en&output=embed`
 
 /**
+ * Keyless Google Street View iframe source.
+ *
+ * This is a one-way preview: it shows the pin at street level so a company can
+ * confirm it landed on the right building, and lets a customer see the frontage
+ * before visiting. It cannot report a position back, so the pin itself is still
+ * set on the map — a drag-the-pegman picker needs the paid Maps JavaScript API.
+ *
+ * Renders an empty panorama where Street View has no coverage; there is no way
+ * to detect that from inside an iframe, so callers should offer the "open in
+ * Google Maps" link as an escape hatch.
+ */
+export const streetViewEmbedUrl = (lat, lng, heading = 0) =>
+  `https://maps.google.com/maps?layer=c&cbll=${lat},${lng}&cbp=11,${heading},0,0,0&output=svembed`
+
+/** Full Google Maps Street View, opened in a new tab. */
+export const streetViewUrl = (lat, lng) =>
+  `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`
+
+/**
  * Look a place up through OpenStreetMap's Nominatim geocoder.
  *
  * Nominatim's usage policy caps this at one request per second, so callers must
