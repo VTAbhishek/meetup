@@ -1,3 +1,17 @@
+# ---- Keep the Authorization header ----
+# Under PHP-FPM/CGI (the usual cPanel setup) Apache does not pass the
+# Authorization header through to PHP, so every signed-in request looks
+# anonymous and the whole dashboard 401s — while working fine locally under
+# mod_php. Both forms are here because hosts differ in which one they honour.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+</IfModule>
+<IfModule mod_setenvif.c>
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+</IfModule>
+
 # Allow larger uploads (cover gallery supports up to 20 MB per image and the
 # generated cover video up to 60 MB; raise the per-file and total request sizes
 # accordingly).

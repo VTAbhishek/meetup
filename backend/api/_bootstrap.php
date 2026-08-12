@@ -15,12 +15,29 @@ if ($origin) {
     header('Vary: Origin');
 }
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-HTTP-Method-Override');
 header('Content-Type: application/json; charset=utf-8');
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
     http_response_code(204);
     exit;
+}
+
+// ---- Method override ----
+// The client sends PUT and DELETE as POST with the real verb in this header,
+// because many shared hosts refuse those verbs outright. Restore it here, once,
+// so every endpoint below can keep branching on REQUEST_METHOD as normal.
+// Only POST is allowed to be overridden, and only to PUT or DELETE — otherwise
+// the header would be a way to turn a harmless GET into a delete.
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
+    $headers   = function_exists('getallheaders') ? getallheaders() : [];
+    $override  = $headers['X-HTTP-Method-Override']
+        ?? $headers['x-http-method-override']
+        ?? ($_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? '');
+    $override  = strtoupper(trim($override));
+    if ($override === 'PUT' || $override === 'DELETE') {
+        $_SERVER['REQUEST_METHOD'] = $override;
+    }
 }
 
 /** Send a JSON response and stop. */

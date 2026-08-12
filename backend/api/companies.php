@@ -20,7 +20,9 @@ if ($q !== '') {
     array_push($params, $like, $like, $like, $like, $like);
 }
 if ($category !== '') {
-    $where[] = 'c.category = ?';
+    // TRIM for the same reason as the category counts: a stray space saved on
+    // the company must not hide it from its own category page.
+    $where[] = 'TRIM(c.category) = ?';
     $params[] = $category;
 }
 if ($districtId > 0) {

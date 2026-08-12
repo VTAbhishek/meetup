@@ -13,8 +13,23 @@ async function request(path, { method = 'GET', body, auth = false } = {}) {
     const t = getToken()
     if (t) headers['Authorization'] = `Bearer ${t}`
   }
+
+  // PUT and DELETE go out as POST carrying the real method in a header.
+  //
+  // Plenty of shared hosts (cPanel + mod_security is the usual culprit) reject
+  // those two verbs outright, which breaks every edit and delete in the app
+  // while GETs keep working — a confusing failure that only shows up in
+  // production. POST is never blocked, and _bootstrap.php puts the real method
+  // back before any endpoint sees the request. Done for local requests too, so
+  // what we test is what ships.
+  let wireMethod = method
+  if (method === 'PUT' || method === 'DELETE') {
+    wireMethod = 'POST'
+    headers['X-HTTP-Method-Override'] = method
+  }
+
   const res = await fetch(`${API_BASE}/${path}`, {
-    method,
+    method: wireMethod,
     headers,
     body: body ? (isForm ? body : JSON.stringify(body)) : undefined,
   })
