@@ -4,6 +4,7 @@ import { Star, PenLine, LayoutGrid, ChevronDown, User, Settings, LogOut, Buildin
 import { useAuth } from '../auth'
 import { useLang } from '../i18n'
 import { colorFor, initials } from '../lib'
+import { homeFor } from './AuthShell'
 import SearchBar from './SearchBar'
 import DistrictCityPicker from './DistrictCityPicker'
 import CustomerBell from './CustomerBell'
@@ -39,7 +40,8 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
       <div className="container-page flex h-16 items-center gap-3 sm:gap-4">
-        <Link to="/" className="flex shrink-0 items-center gap-2">
+        {/* A signed-in company's home is its dashboard, an admin's is the panel */}
+        <Link to={homeFor(user)} className="flex shrink-0 items-center gap-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-green">
             <Star size={20} color="white" fill="white" strokeWidth={0} />
           </span>

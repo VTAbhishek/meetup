@@ -33,7 +33,14 @@ export default function App() {
     <Routes>
       {/* Public + customer site (with navbar/footer) */}
       <Route element={<Layout />}>
-        <Route path="/" element={<BlockRoles roles={['company']}><Home /></BlockRoles>} />
+        {/* Not blocked for companies. The home page is public, and blocking it
+            meant a signed-in company following ANY link that didn't resolve to
+            a route — a shared link with the # lost, a typo — landed on `/` and
+            was bounced to /business, with no way to reach the page they asked
+            for. Their own "home" is still the dashboard: the navbar logo points
+            there. Writing reviews stays blocked below, which is a real rule
+            rather than a navigation habit. */}
+        <Route path="/" element={<Home />} />
         <Route path="/search" element={<Search />} />
         <Route path="/review/:slug" element={<CompanyProfile />} />
         <Route

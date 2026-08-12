@@ -1,0 +1,43 @@
+# ============================================================
+#  Rescue links that lost their "#"
+#
+#  The app routes on the hash (site.com/#/t/abc). A link without it —
+#  retyped, shared through an app that strips fragments, or simply guessed —
+#  reaches the server as a real path (site.com/t/abc), which Apache would
+#  answer with 404, or, if index.html is served anyway, the app would read as
+#  the home page. Either way the visitor never sees the page they asked for.
+#
+#  So: anything that isn't a real file gets redirected to the same path behind
+#  the hash, and the router takes it from there.
+#
+#  ------------------------------------------------------------
+#  IF THE APP IS NOT AT THE DOMAIN ROOT
+#  Deployed in a subfolder (e.g. site.com/app/), change BOTH lines marked
+#  "EDIT" below from "/" to "/app/".
+#  ------------------------------------------------------------
+# ============================================================
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # EDIT (1 of 2) — the folder this file sits in, as seen from the browser.
+  RewriteBase /
+
+  # Real files and folders are served as they are: index.html, the assets
+  # bundle, images. Without this the redirect would swallow the whole app.
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # A query string has to end up INSIDE the hash — with hash routing the
+  # router reads it from there, not from window.location.search. QSD stops
+  # Apache also appending the original query after the fragment.
+  # EDIT (2 of 2) — the leading "/" in the target.
+  RewriteCond %{QUERY_STRING} .
+  RewriteRule ^(.*)$ /#/$1?%{QUERY_STRING} [R=302,NE,QSD,L]
+
+  # Everything else: /t/abc  ->  /#/t/abc
+  # NE keeps the "#" from being escaped into "%23".
+  # EDIT (2 of 2) — the leading "/" in the target.
+  RewriteRule ^(.*)$ /#/$1 [R=302,NE,L]
+</IfModule>
