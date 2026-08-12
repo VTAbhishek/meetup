@@ -21,6 +21,14 @@ $description = trim($in['description'] ?? '');
 
 if ($name === '') json_error('Company name is required.', 422);
 
+// The category decides which Browse-by-category page lists this company, so
+// clearing it would quietly remove them from the site's main way of being
+// found. Validated against the managed list for the same reason as at sign-up.
+if ($category === '') json_error('Please choose a category.', 422);
+$ck = db()->prepare('SELECT id FROM categories WHERE name = ?');
+$ck->execute([$category]);
+if (!$ck->fetch()) json_error('Please choose a category from the list.', 422);
+
 // Map pin. Sent as numbers by the picker, or explicitly null to clear the pin.
 // Only touch the columns when the client actually included the keys, so the
 // plain "edit profile" form can't wipe a pin it never showed.

@@ -472,7 +472,7 @@ function EditProfileModal({ company, onClose, onSaved }) {
             </label>
             <label className="block">
               <span className="mb-1.5 block text-sm font-semibold text-slate-700">Category</span>
-              <select className="input" value={form.category} onChange={set('category')}>
+              <select className="input" value={form.category} onChange={set('category')} required>
                 <option value="">Select a category</option>
                 {categories.map((c) => <option key={c.category} value={c.category}>{c.category}</option>)}
               </select>

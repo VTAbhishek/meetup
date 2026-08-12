@@ -36,8 +36,23 @@ if ($role === 'company') {
     if ($company === '')     $errors['company_name'] = 'Company name is required.';
     if ($districtId <= 0)    $errors['district_id']  = 'Please select a district.';
     if ($cityId <= 0)        $errors['city_id']      = 'Please select a city.';
-    // The chosen city must actually belong to the chosen district.
-    if (!$errors && $districtId > 0 && $cityId > 0) {
+
+    // The category is what puts a company on the Browse-by-category pages and
+    // in the category filter. Left blank it is invisible there, so it is
+    // required — and checked against the managed list, since a free-typed
+    // value would match no category page at all.
+    if ($category === '') {
+        $errors['category'] = 'Please choose a category.';
+    } else {
+        $ck = db()->prepare('SELECT id FROM categories WHERE name = ?');
+        $ck->execute([$category]);
+        if (!$ck->fetch()) $errors['category'] = 'Please choose a category from the list.';
+    }
+
+    // The chosen city must actually belong to the chosen district. Checked
+    // whenever both were supplied, rather than only when nothing else failed —
+    // otherwise a blank category would hide this error until the next attempt.
+    if ($districtId > 0 && $cityId > 0) {
         $ck = db()->prepare('SELECT id FROM cities WHERE id = ? AND district_id = ?');
         $ck->execute([$cityId, $districtId]);
         if (!$ck->fetch()) $errors['city_id'] = 'That city does not belong to the selected district.';

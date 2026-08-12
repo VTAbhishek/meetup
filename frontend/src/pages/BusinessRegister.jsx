@@ -114,7 +114,9 @@ export default function BusinessRegister() {
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Category">
-            <select className="input" value={form.category} onChange={set('category')}>
+            {/* Required: a company with no category never appears on the
+                Browse-by-category pages, which is how most customers look. */}
+            <select className="input" value={form.category} onChange={set('category')} required>
               <option value="">Select a category</option>
               {categories.map((c) => (
                 <option key={c.category} value={c.category}>{c.category}</option>
