@@ -34,6 +34,27 @@ body {
   .card {
     @apply rounded-2xl border border-slate-200 bg-white shadow-card;
   }
+  /* A dashboard card's list area.
+     Cards on the business dashboard hold lists that grow without limit — a
+     menu of eighty dishes, a season of reservations. Left alone, one long list
+     pushes every other card off the screen. Capping the list and scrolling it
+     inside the card keeps the page navigable however much data there is, and
+     keeps each card's header and actions in reach.
+     `pr-1.5` leaves room for the scrollbar so it never sits on the content. */
+  .card-scroll {
+    @apply max-h-[460px] overflow-y-auto overscroll-contain pr-1.5;
+  }
+  .card-scroll-lg {
+    @apply card-scroll max-h-[560px];
+  }
+
+  /* Inputs on the guest QR-ordering sheet. Rounder and warmer than `.input`,
+     which is tuned for the dashboard's cold-grey forms. */
+  .sheet-input {
+    @apply w-full rounded-2xl border border-transparent bg-[#F7F1FB] px-4 py-3 text-sm
+           font-medium text-brand-navy placeholder:text-violet-300
+           focus:border-violet-300 focus:bg-white focus:outline-none;
+  }
 }
 
 /* Hide scrollbar on carousel rows (still scrollable). */
@@ -43,6 +64,40 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* ---- Scrollbar inside dashboard cards ----
+   The platform default is a wide grey bar that reads as part of the window
+   rather than part of the card. This one is slim and brand-tinted, and only
+   appears when the list actually overflows.
+
+   Both classes are listed explicitly: `.card-scroll-lg` is built with @apply,
+   which copies declarations but not pseudo-element rules, so styling only
+   `.card-scroll` would leave the taller cards with the default bar. */
+.card-scroll,
+.card-scroll-lg {
+  scrollbar-width: thin;
+  scrollbar-color: #DDD6FE transparent;
+}
+.card-scroll::-webkit-scrollbar,
+.card-scroll-lg::-webkit-scrollbar {
+  width: 8px;
+}
+.card-scroll::-webkit-scrollbar-track,
+.card-scroll-lg::-webkit-scrollbar-track {
+  background: transparent;
+}
+.card-scroll::-webkit-scrollbar-thumb,
+.card-scroll-lg::-webkit-scrollbar-thumb {
+  background: #DDD6FE;              /* violet-200 */
+  border-radius: 9999px;
+  border: 2px solid transparent;    /* inset, so the thumb reads as 4px */
+  background-clip: content-box;
+}
+.card-scroll::-webkit-scrollbar-thumb:hover,
+.card-scroll-lg::-webkit-scrollbar-thumb:hover {
+  background: #A78BFA;              /* violet-400 */
+  background-clip: content-box;
 }
 
 /* ---- Animated dual-colour footer ---- */
@@ -135,3 +190,65 @@ body {
 .swal2-timer-progress-bar { background: #DB2777 !important; }
 .swal2-icon.swal2-success [class^='swal2-success-line'] { background-color: #DB2777 !important; }
 .swal2-icon.swal2-success .swal2-success-ring { border-color: rgba(219,39,119,.3) !important; }
+
+/* ---- Table QR cards (10 × 10 cm, printable) ----
+   Sized in millimetres so the on-screen preview and the sheet that leaves the
+   printer are the same card. `print-color-adjust` keeps the header band and the
+   QR's dark ink from being helpfully "saved" by the printer driver. */
+.qr-card {
+  width: 100mm;
+  height: 100mm;
+  background: #fff;
+  color: #1e1b4b;
+  box-sizing: border-box;
+  overflow: hidden;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.qr-card-inner {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1.2mm solid #7C3AED;
+  border-radius: 4mm;
+  padding: 5mm 6mm;
+  text-align: center;
+}
+.qr-card-hotel {
+  font-size: 5mm;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  /* Two lines of hotel name, then ellipsis — the QR must not be pushed off. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.qr-card-qr {
+  margin: 3.5mm 0 3mm;
+  width: 48mm;
+  height: 48mm;
+}
+.qr-card-qr img { width: 100%; height: 100%; display: block; }
+.qr-card-table { font-size: 8mm; font-weight: 900; line-height: 1; letter-spacing: -0.03em; }
+.qr-card-meta  { margin-top: 1.5mm; font-size: 3.4mm; font-weight: 600; color: #6d28d9; }
+.qr-card-hint  { margin-top: 2.5mm; font-size: 3mm; color: #64748b; }
+
+/* Off-screen until the print dialog opens. */
+.qr-print-root { display: none; }
+
+@media print {
+  @page { size: 100mm 100mm; margin: 0; }
+
+  /* Only the card markup is a direct child of <body> worth showing, so hide
+     every sibling rather than trying to unwind the app's own layout. */
+  body > *:not(.qr-print-root) { display: none !important; }
+  body { background: #fff !important; }
+
+  .qr-print-root { display: block !important; }
+  .qr-card { break-after: page; page-break-after: always; }
+  .qr-card:last-child { break-after: auto; page-break-after: auto; }
+}

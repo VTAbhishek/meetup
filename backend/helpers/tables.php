@@ -6,7 +6,12 @@
  */
 require_once __DIR__ . '/urls.php';
 
-/** Shape one company_tables row for JSON. */
+/**
+ * Shape one company_tables row for JSON.
+ *
+ * `qr_token` is included for the owning company only — it is the secret the
+ * printed QR code carries, and the public picker strips it.
+ */
 function company_table_row(array $r): array
 {
     return [
@@ -16,16 +21,33 @@ function company_table_row(array $r): array
         'seats'      => (int) $r['seats'],
         'note'       => $r['note'],
         'image_url'  => $r['image'] ? asset_url($r['image']) : null,
+        'qr_token'   => $r['qr_token'] ?? null,
         'is_active'  => (int) $r['is_active'] === 1,
         'sort_order' => (int) $r['sort_order'],
     ];
+}
+
+/**
+ * A fresh, unguessable token for a table's QR code.
+ *
+ * Looped against the table rather than trusted blindly: the column is unique,
+ * and a silent insert failure would leave a table with no printable code.
+ */
+function new_table_qr_token(PDO $pdo): string
+{
+    $stmt = $pdo->prepare('SELECT id FROM company_tables WHERE qr_token = ?');
+    do {
+        $token = bin2hex(random_bytes(16));
+        $stmt->execute([$token]);
+    } while ($stmt->fetchColumn());
+    return $token;
 }
 
 /** Every table a company owns, active or not (business dashboard view). */
 function company_table_list(PDO $pdo, int $cid): array
 {
     $stmt = $pdo->prepare(
-        'SELECT id, category, table_no, seats, note, image, is_active, sort_order
+        'SELECT id, category, table_no, seats, note, image, qr_token, is_active, sort_order
          FROM company_tables WHERE company_id = ? ORDER BY category, sort_order, id'
     );
     $stmt->execute([$cid]);

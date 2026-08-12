@@ -117,6 +117,8 @@ export const api = {
   deleteCard: (id) => request(`my-company-cards.php?id=${id}`, { method: 'DELETE', auth: true }),
   myMenu: () => request('my-company-menu.php', { auth: true }),
   addMenuItem: (fd) => request('my-company-menu.php', { method: 'POST', body: fd, auth: true }),
+  // Takes a plain object (the availability switch) or FormData (the edit form,
+  // which may carry a new photo) — request() picks the right encoding.
   updateMenuItem: (id, b) => request(`my-company-menu.php?id=${id}`, { method: 'POST', body: b, auth: true }),
   deleteMenuItem: (id) => request(`my-company-menu.php?id=${id}`, { method: 'DELETE', auth: true }),
   myMoods: () => request('my-company-moods.php', { auth: true }),
@@ -125,6 +127,19 @@ export const api = {
   addTable: (fd) => request('my-company-tables.php', { method: 'POST', body: fd, auth: true }),
   updateTable: (id, b) => request(`my-company-tables.php?id=${id}`, { method: 'POST', body: b, auth: true }),
   deleteTable: (id) => request(`my-company-tables.php?id=${id}`, { method: 'DELETE', auth: true }),
+  tableByToken: (token) => request(`table-by-token.php?token=${encodeURIComponent(token)}`),
+
+  // ---- QR ordering at a table (guests, no account needed) ----
+  tableMenu: (token) => request(`table-menu.php?token=${encodeURIComponent(token)}`),
+  // auth is opt-in on the server: a guest orders fine without a token, and a
+  // logged-in customer gets the order linked to their account.
+  placeOrder: (body) => request('place-order.php', { method: 'POST', body, auth: true }),
+  orderStatus: (t) => request(`order-status.php?t=${encodeURIComponent(t)}`),
+
+  // ---- company: the orders screen ----
+  myOrders: () => request('my-company-orders.php', { auth: true }),
+  setOrderStatus: (id, status) => request(`my-company-orders.php?id=${id}`, { method: 'POST', body: { status }, auth: true }),
+  deleteOrder: (id) => request(`my-company-orders.php?id=${id}`, { method: 'DELETE', auth: true }),
   uploadCompanyLogo: (file) => {
     const fd = new FormData()
     fd.append('logo', file)
@@ -156,6 +171,12 @@ export const api = {
   adminCategories: () => request('admin-categories.php', { auth: true }),
   createCategory: (name) => request('admin-categories.php', { method: 'POST', body: { name }, auth: true }),
   deleteCategory: (id) => request(`admin-categories.php?id=${id}`, { method: 'DELETE', auth: true }),
+
+  // ---- admin: mood tags ----
+  adminMoods: () => request('admin-moods.php', { auth: true }),
+  createMood: (b) => request('admin-moods.php', { method: 'POST', body: b, auth: true }),
+  updateMood: (id, b) => request(`admin-moods.php?id=${id}`, { method: 'PUT', body: b, auth: true }),
+  deleteMood: (id) => request(`admin-moods.php?id=${id}`, { method: 'DELETE', auth: true }),
 
   // ---- admin: districts & cities ----
   adminDistricts: () => request('admin-districts.php', { auth: true }),

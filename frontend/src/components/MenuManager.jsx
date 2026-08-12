@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Plus, X, ImagePlus, UtensilsCrossed, Trash2, List, Filter } from 'lucide-react'
+import { Plus, X, ImagePlus, UtensilsCrossed, Trash2, List, Filter, Pencil } from 'lucide-react'
 import { api } from '../api'
 import { confirmDelete, toastOk, alertErr } from '../alerts'
 import { compressImage } from '../lib/imageCompress'
@@ -13,14 +13,17 @@ const money = (n) => 'Rs ' + Number(n || 0).toLocaleString('en-LK', { minimumFra
 
 /**
  * Menu manager for the business dashboard. The company adds food/drink items one
- * by one (name, category, price, optional photo). Each item has an availability
- * switch — turn it off when it's not available and customers stop seeing it in
- * their pre-order menu, without deleting it.
+ * by one (name, category, price, optional photo), and can edit any of them
+ * afterwards — a misspelled dish or a price change shouldn't mean deleting and
+ * re-adding. Each item has an availability switch — turn it off when it's not
+ * available and customers stop seeing it in their pre-order menu, without
+ * deleting it.
  */
 export default function MenuManager() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
+  const [editing, setEditing] = useState(null)  // the item open in the edit form
   const [busyId, setBusyId] = useState(null)
   const [filter, setFilter] = useState('all') // 'all' | category name
 
@@ -75,8 +78,9 @@ export default function MenuManager() {
             <UtensilsCrossed size={18} className="text-brand-green" /> Menu
           </h2>
           <p className="text-sm text-slate-500">
-            Add your dishes one by one. Turn an item's switch off when it's unavailable — customers won't see it
-            in their pre-order menu until you turn it back on.
+            Add your dishes one by one, and use the pencil to edit a name, price, category or photo later. Turn
+            an item's switch off when it's unavailable — customers won't see it in their pre-order menu until
+            you turn it back on.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -110,52 +114,81 @@ export default function MenuManager() {
           No menu items yet. Click <span className="font-semibold text-slate-500">Add item</span> to build your menu.
         </p>
       ) : (
-        // Fixed-height, internally scrollable so a long menu never stretches the page.
-        <div className="max-h-[460px] space-y-6 overflow-y-auto pr-1.5">
-          {Object.entries(grouped).map(([cat, list]) => (
-            <div key={cat}>
-              <h3 className="sticky top-0 z-10 mb-2 bg-white py-1 text-xs font-bold uppercase tracking-wide text-slate-400">{cat}</h3>
-              <ul className="grid gap-2 sm:grid-cols-2">
-                {list.map((it) => (
-                  <li
-                    key={it.id}
-                    className={`flex items-center gap-3 rounded-xl border p-2.5 transition ${
-                      it.is_available ? 'border-slate-200' : 'border-slate-200 bg-slate-50 opacity-70'
-                    }`}
-                  >
-                    {it.image_url ? (
-                      <img src={it.image_url} alt={it.name} className="h-14 w-14 shrink-0 rounded-lg object-cover" />
-                    ) : (
-                      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-brand-silver text-slate-300">
-                        <UtensilsCrossed size={20} />
-                      </span>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold text-brand-navy">{it.name}</p>
-                      <p className="text-sm font-bold text-brand-green">{money(it.price)}</p>
-                    </div>
-                    {/* Availability switch */}
-                    <Switch on={it.is_available} busy={busyId === it.id} onClick={() => toggle(it)} />
-                    <button
-                      onClick={() => remove(it)}
-                      title="Delete item"
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
+        /* Two columns of category blocks on a wide screen.
+           CSS columns rather than a grid: categories hold wildly different
+           numbers of dishes, and a grid would leave a hole under every short
+           one to keep its row aligned. Columns pack each block against the
+           last, so both halves of the card stay full.
+
+           The columns live on an inner div, never on the scrolling element
+           itself: a multi-column box with a capped height spills into extra
+           columns to the *right*, which would turn this into a sideways
+           scroller. With the height cap outside, the columns balance to the
+           content and the card scrolls down as before. */
+        <div className="card-scroll">
+          <div className="sm:columns-2 sm:gap-5">
+            {Object.entries(grouped).map(([cat, list]) => (
+              <div key={cat} className="mb-5 break-inside-avoid">
+                <h3 className="mb-2 py-1 text-xs font-bold uppercase tracking-wide text-slate-400">{cat}</h3>
+                {/* One dish per row — the two columns come from the layout above */}
+                <ul className="space-y-2">
+                  {list.map((it) => (
+                    <li
+                      key={it.id}
+                      className={`flex items-center gap-3 rounded-xl border p-2.5 transition ${
+                        it.is_available ? 'border-slate-200' : 'border-slate-200 bg-slate-50 opacity-70'
+                      }`}
                     >
-                      <Trash2 size={16} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+                      {it.image_url ? (
+                        <img src={it.image_url} alt={it.name} className="h-14 w-14 shrink-0 rounded-lg object-cover" />
+                      ) : (
+                        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-brand-silver text-slate-300">
+                          <UtensilsCrossed size={20} />
+                        </span>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold text-brand-navy">{it.name}</p>
+                        <p className="text-sm font-bold text-brand-green">{money(it.price)}</p>
+                      </div>
+                      {/* Availability switch */}
+                      <Switch on={it.is_available} busy={busyId === it.id} onClick={() => toggle(it)} />
+                      <button
+                        onClick={() => setEditing(it)}
+                        title="Edit item"
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-brand-silver hover:text-brand-blue"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      <button
+                        onClick={() => remove(it)}
+                        title="Delete item"
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {adding && (
-        <AddItemModal
+        <ItemModal
           categories={categories}
           onClose={() => setAdding(false)}
-          onAdded={(list) => { setItems(list); setAdding(false) }}
+          onSaved={(list) => { setItems(list); setAdding(false) }}
+        />
+      )}
+
+      {editing && (
+        <ItemModal
+          item={editing}
+          categories={categories}
+          onClose={() => setEditing(null)}
+          onSaved={(list) => { setItems(list); setEditing(null) }}
         />
       )}
     </div>
@@ -184,12 +217,22 @@ function Switch({ on, busy, onClick }) {
   )
 }
 
-function AddItemModal({ categories, onClose, onAdded }) {
-  const [name, setName] = useState('')
-  const [category, setCategory] = useState('')
-  const [price, setPrice] = useState('')
+/**
+ * Add or edit one menu item.
+ *
+ * The same form serves both: pass `item` to edit it, leave it out to add. They
+ * ask for exactly the same fields, and keeping one component means an edit can
+ * never drift out of step with what adding allows.
+ */
+function ItemModal({ item, categories, onClose, onSaved }) {
+  const editing = Boolean(item)
+
+  const [name, setName] = useState(item?.name ?? '')
+  const [category, setCategory] = useState(item?.category ?? '')
+  const [price, setPrice] = useState(item ? String(item.price) : '')
   const [file, setFile] = useState(null)       // cropped File ready to upload
-  const [preview, setPreview] = useState(null)
+  const [preview, setPreview] = useState(item?.image_url ?? null)
+  const [dropImage, setDropImage] = useState(false) // clear the existing photo
   const [toCrop, setToCrop] = useState(null)    // File waiting in the crop modal
   const [busy, setBusy] = useState(false)
   // Category: pick from existing ones, or "+" to type a new category. Start in
@@ -209,10 +252,18 @@ function AddItemModal({ categories, onClose, onAdded }) {
 
   const onCropped = (cropped) => {
     setFile(cropped)
+    setDropImage(false)
     setToCrop(null)
     const reader = new FileReader()
     reader.onload = () => setPreview(reader.result)
     reader.readAsDataURL(cropped)
+  }
+
+  /** Take the photo off the item — a new one can still be chosen after this. */
+  const clearPhoto = () => {
+    setFile(null)
+    setPreview(null)
+    setDropImage(true)
   }
 
   const save = async (e) => {
@@ -227,9 +278,12 @@ function AddItemModal({ categories, onClose, onAdded }) {
       fd.append('category', category.trim())
       fd.append('price', String(Number(price)))
       if (file) fd.append('image', file)
-      const d = await api.addMenuItem(fd)
-      toastOk('Item added')
-      onAdded(d.items)
+      // Only meaningful on an edit, and only when no replacement was chosen.
+      else if (editing && dropImage) fd.append('remove_image', '1')
+
+      const d = editing ? await api.updateMenuItem(item.id, fd) : await api.addMenuItem(fd)
+      toastOk(editing ? 'Item updated' : 'Item added')
+      onSaved(d.items)
     } catch (err) {
       alertErr(err)
       setBusy(false)
@@ -245,7 +299,7 @@ function AddItemModal({ categories, onClose, onAdded }) {
           className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-cardHover"
         >
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-extrabold text-brand-navy">Add menu item</h3>
+            <h3 className="text-lg font-extrabold text-brand-navy">{editing ? 'Edit menu item' : 'Add menu item'}</h3>
             <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-700"><X size={20} /></button>
           </div>
 
@@ -307,25 +361,42 @@ function AddItemModal({ categories, onClose, onAdded }) {
 
           <div className="mt-4">
             <span className="mb-1.5 block text-sm font-semibold text-slate-700">Photo <span className="font-normal text-slate-400">(optional)</span></span>
-            <button
-              type="button"
-              onClick={() => ref.current?.click()}
-              className="flex h-32 w-full flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border-2 border-dashed border-slate-300 text-slate-400 transition hover:border-brand-blue hover:text-brand-blue"
-            >
-              {preview ? (
-                <img src={preview} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <>
-                  <ImagePlus size={22} />
-                  <span className="text-xs font-medium">Upload &amp; crop a square photo</span>
-                </>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => ref.current?.click()}
+                className="flex h-32 w-full flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border-2 border-dashed border-slate-300 text-slate-400 transition hover:border-brand-blue hover:text-brand-blue"
+              >
+                {preview ? (
+                  <img src={preview} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <>
+                    <ImagePlus size={22} />
+                    <span className="text-xs font-medium">
+                      Upload &amp; crop a square photo
+                    </span>
+                  </>
+                )}
+              </button>
+              {preview && (
+                <button
+                  type="button"
+                  onClick={clearPhoto}
+                  title="Remove the photo"
+                  className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/75"
+                >
+                  <X size={15} />
+                </button>
               )}
-            </button>
+            </div>
+            {preview && (
+              <p className="mt-1.5 text-xs text-slate-400">Click the photo to replace it.</p>
+            )}
             <input ref={ref} type="file" accept="image/*" className="hidden" onChange={pick} />
           </div>
 
           <button type="submit" disabled={busy} className="btn-blue mt-5 w-full py-2.5">
-            {busy ? 'Adding…' : 'Add item'}
+            {busy ? 'Saving…' : editing ? 'Save changes' : 'Add item'}
           </button>
         </form>
       </div>

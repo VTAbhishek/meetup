@@ -32,7 +32,7 @@ if ($cid <= 0) {
 if ($cid <= 0) json_error('Company not found', 404);
 
 $stmt = $pdo->prepare(
-    'SELECT id, category, table_no, seats, note, image, is_active, sort_order
+    'SELECT id, category, table_no, seats, note, image, qr_token, is_active, sort_order
      FROM company_tables
      WHERE company_id = ? AND is_active = 1
      ORDER BY category, sort_order, id'
@@ -59,7 +59,9 @@ $categories = [];
 foreach ($rows as $r) {
     if (!in_array($r['category'], $categories, true)) $categories[] = $r['category'];
     $t = company_table_row($r);
-    unset($t['is_active'], $t['sort_order']); // internal-only fields
+    // Internal-only fields. qr_token is the secret printed on the table's card:
+    // handing the whole set out here would let anyone mint every table's link.
+    unset($t['is_active'], $t['sort_order'], $t['qr_token']);
     $t['booked'] = in_array((int) $r['id'], $booked, true);
     $tables[] = $t;
 }

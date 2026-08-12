@@ -201,16 +201,17 @@ CREATE TABLE IF NOT EXISTS `moods` (
   `hint`       VARCHAR(160) DEFAULT NULL,     -- one-line explanation
   `icon`       VARCHAR(40)  DEFAULT NULL,     -- lucide icon name
   `sort_order` INT NOT NULL DEFAULT 0,
-  UNIQUE KEY `uq_mood_slug` (`slug`)
+  UNIQUE KEY `uq_mood_slug` (`slug`),
+  UNIQUE KEY `uq_mood_name` (`name`)   -- two identical chips would help nobody
 ) ENGINE=InnoDB;
 
 INSERT IGNORE INTO `moods` (`slug`,`name`,`hint`,`icon`,`sort_order`) VALUES
   ('family-outing',   'Family short outing',     'Relaxed, kid-friendly, easy for a short family trip', 'Users',       1),
   ('quick-bite',      'Quick bite with friends', 'Fast, casual, good for a short catch-up',             'Sandwich',    2),
-  ('late-night',      'Late night spot',         'Open late — good for a night out',                    'Moon',        3),
+  ('late-night',      'Late night spot',         'Open late - good for a night out',                    'Moon',        3),
   ('romantic',        'Romantic date',           'Quiet and intimate, good for two',                    'Heart',       4),
   ('work-friendly',   'Work or study friendly',  'Calm, with space to sit and work',                    'Laptop',      5),
-  ('celebration',     'Big group celebration',   'Room for a crowd — birthdays and parties',            'PartyPopper', 6);
+  ('celebration',     'Big group celebration',   'Room for a crowd - birthdays and parties',            'PartyPopper', 6);
 
 CREATE TABLE IF NOT EXISTS `company_moods` (
   `company_id` INT NOT NULL,
@@ -235,10 +236,14 @@ CREATE TABLE IF NOT EXISTS `company_tables` (
   `seats`      INT NOT NULL DEFAULT 2,
   `note`       VARCHAR(200) DEFAULT NULL,      -- e.g. "Window side, 2nd floor"
   `image`      VARCHAR(255) DEFAULT NULL,
+  -- Random key carried by the table's printed QR code. Not the id: ids are
+  -- sequential, so a printed card would advertise every other table.
+  `qr_token`   VARCHAR(32)  DEFAULT NULL,
   `is_active`  TINYINT(1) NOT NULL DEFAULT 1,  -- off = hidden from customers
   `sort_order` INT NOT NULL DEFAULT 0,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY `uq_company_table_no` (`company_id`,`table_no`),
+  UNIQUE KEY `uq_table_qr_token` (`qr_token`),
   KEY `idx_company` (`company_id`),
   FOREIGN KEY (`company_id`) REFERENCES `companies`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
@@ -336,6 +341,48 @@ CREATE TABLE IF NOT EXISTS `reservation_items` (
   `qty`            INT NOT NULL DEFAULT 1,
   KEY `reservation_id` (`reservation_id`),
   FOREIGN KEY (`reservation_id`) REFERENCES `reservations`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ------------------------------------------------------------
+--  Dine-in orders placed by scanning the QR card on a table.
+--  Not reservations: there is no date or time to pick (the guest is at the
+--  table now), no account is needed, and the kitchen tracks a different set
+--  of states.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `orders` (
+  `id`          INT AUTO_INCREMENT PRIMARY KEY,
+  `ref`         VARCHAR(8)  NOT NULL,          -- short code staff read out, e.g. K7Q4
+  `track_token` VARCHAR(32) NOT NULL,          -- what the guest's browser polls with
+  `company_id`  INT NOT NULL,
+  `table_id`    INT DEFAULT NULL,              -- nulled if the table is deleted
+  `table_label` VARCHAR(100) DEFAULT NULL,     -- "VIP · T-12" at order time
+  `customer_id` INT DEFAULT NULL,              -- set only if a logged-in customer ordered
+  `name`        VARCHAR(150) DEFAULT NULL,
+  `mobile`      VARCHAR(30)  DEFAULT NULL,
+  `people`      INT NOT NULL DEFAULT 1,
+  `note`        VARCHAR(300) DEFAULT NULL,
+  `total`       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  `status`      ENUM('placed','preparing','served','cancelled') NOT NULL DEFAULT 'placed',
+  `created_at`  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uq_order_ref`   (`ref`),
+  UNIQUE KEY `uq_order_track` (`track_token`),
+  KEY `idx_order_company` (`company_id`,`status`),
+  FOREIGN KEY (`company_id`)  REFERENCES `companies`(`id`)      ON DELETE CASCADE,
+  FOREIGN KEY (`table_id`)    REFERENCES `company_tables`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`customer_id`) REFERENCES `users`(`id`)          ON DELETE SET NULL
+) ENGINE=InnoDB;
+
+--  Name and price are copied in, not joined: an order must still read
+--  correctly after the dish is renamed, repriced or taken off the menu.
+CREATE TABLE IF NOT EXISTS `order_items` (
+  `id`           INT AUTO_INCREMENT PRIMARY KEY,
+  `order_id`     INT NOT NULL,
+  `menu_item_id` INT DEFAULT NULL,
+  `name`         VARCHAR(120) NOT NULL,
+  `price`        DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  `qty`          INT NOT NULL DEFAULT 1,
+  KEY `idx_order` (`order_id`),
+  FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------

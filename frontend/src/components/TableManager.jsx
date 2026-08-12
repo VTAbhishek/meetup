@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Plus, X, ImagePlus, Armchair, Trash2, List, Filter, Users } from 'lucide-react'
+import { Plus, X, ImagePlus, Armchair, Trash2, List, Filter, Users, QrCode, Printer, Pencil } from 'lucide-react'
 import { api } from '../api'
 import { confirmDelete, toastOk, alertErr } from '../alerts'
 import { compressImage } from '../lib/imageCompress'
 import Spinner from './Spinner'
 import CoverCropper from './CoverCropper'
+import TableQrModal from './TableQrCard'
 
 const MAX_MB = 10
 
@@ -17,13 +18,19 @@ const SUGGESTED = ['VIP', 'Family', 'Couple']
  * count, optional note and photo. Each table has an on/off switch — turn it off
  * (e.g. under repair) and customers stop seeing it in the reservation picker,
  * without deleting it or losing its booking history.
+ *
+ * Every table also carries a QR code, printable as a 10 × 10 cm card to stand
+ * on the table itself — scanning it opens the reservation form with that table
+ * already chosen.
  */
-export default function TableManager() {
+export default function TableManager({ company }) {
   const [tables, setTables] = useState([])
   const [loading, setLoading] = useState(true)
   const [adding, setAdding] = useState(false)
+  const [editing, setEditing] = useState(null)  // the table open in the edit form
   const [busyId, setBusyId] = useState(null)
   const [filter, setFilter] = useState('all')
+  const [qrFor, setQrFor] = useState(null)   // tables whose cards are being previewed
 
   useEffect(() => {
     api.myTables().then((d) => setTables(d.tables)).catch(() => {}).finally(() => setLoading(false))
@@ -34,14 +41,21 @@ export default function TableManager() {
     [tables]
   )
 
+  const visible = useMemo(
+    () => tables.filter((t) => filter === 'all' || t.category === filter),
+    [tables, filter]
+  )
+
   const grouped = useMemo(() => {
     const g = {}
-    for (const t of tables) {
-      if (filter !== 'all' && t.category !== filter) continue
-      (g[t.category] ||= []).push(t)
-    }
+    for (const t of visible) (g[t.category] ||= []).push(t)
     return g
-  }, [tables, filter])
+  }, [visible])
+
+  // A card needs the table's token for the QR, and the company for the name
+  // printed on it. (Older rows are given a token by the migration.)
+  const canPrint = (t) => Boolean(company?.company_name && t.qr_token)
+  const printable = visible.filter(canPrint)
 
   const toggle = async (t) => {
     setBusyId(t.id)
@@ -78,7 +92,9 @@ export default function TableManager() {
           </h2>
           <p className="text-sm text-slate-500">
             Group your tables by category (VIP, Family, Couple…). Customers pick a category and then a table
-            when they reserve. Turn a table's switch off to hide it without deleting it.
+            when they reserve. Use the pencil to edit a table later, and the switch to hide one without
+            deleting it. Each table gets its own QR code — print it as a 10 × 10 cm card and stand it on
+            the table.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -99,6 +115,15 @@ export default function TableManager() {
               </select>
             </label>
           )}
+          {printable.length > 0 && (
+            <button
+              onClick={() => setQrFor(printable)}
+              title={`Print a QR card for every ${filter === 'all' ? 'table' : filter + ' table'}`}
+              className="btn-ghost py-2 text-sm"
+            >
+              <Printer size={16} /> Print QR ({printable.length})
+            </button>
+          )}
           <button onClick={() => setAdding(true)} className="btn-blue py-2 text-sm">
             <Plus size={16} /> Add table
           </button>
@@ -113,7 +138,7 @@ export default function TableManager() {
           reserve a specific table.
         </p>
       ) : (
-        <div className="max-h-[460px] space-y-6 overflow-y-auto pr-1.5">
+        <div className="card-scroll space-y-6">
           {Object.entries(grouped).map(([cat, list]) => (
             <div key={cat}>
               <h3 className="sticky top-0 z-10 mb-2 bg-white py-1 text-xs font-bold uppercase tracking-wide text-slate-400">
@@ -143,6 +168,21 @@ export default function TableManager() {
                     </div>
                     <Switch on={t.is_active} busy={busyId === t.id} onClick={() => toggle(t)} />
                     <button
+                      onClick={() => setEditing(t)}
+                      title="Edit table"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-brand-silver hover:text-brand-blue"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      onClick={() => setQrFor([t])}
+                      disabled={!canPrint(t)}
+                      title={canPrint(t) ? 'Show and print this table\'s QR card' : 'QR card not available yet'}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-brand-silver hover:text-brand-blue disabled:opacity-30 disabled:hover:bg-transparent"
+                    >
+                      <QrCode size={16} />
+                    </button>
+                    <button
                       onClick={() => remove(t)}
                       title="Delete table"
                       className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600"
@@ -157,13 +197,32 @@ export default function TableManager() {
         </div>
       )}
 
-      {adding && (
-        <AddTableModal
+      {editing && (
+        <TableModal
+          table={editing}
           categories={categories}
-          onClose={() => setAdding(false)}
-          onAdded={(list) => { setTables(list); setAdding(false) }}
+          onClose={() => setEditing(null)}
+          onSaved={(list) => { setTables(list); setEditing(null) }}
         />
       )}
+
+      {adding && (
+        <TableModal
+          categories={categories}
+          onClose={() => setAdding(false)}
+          onSaved={(list) => {
+            // The new table's QR card is what the company came here to get, so
+            // go straight to it rather than making them hunt for the button.
+            const seen = new Set(tables.map((t) => t.id))
+            const created = list.find((t) => !seen.has(t.id))
+            setTables(list)
+            setAdding(false)
+            if (created && canPrint(created)) setQrFor([created])
+          }}
+        />
+      )}
+
+      {qrFor && <TableQrModal company={company} tables={qrFor} onClose={() => setQrFor(null)} />}
     </div>
   )
 }
@@ -188,13 +247,23 @@ function Switch({ on, busy, onClick }) {
   )
 }
 
-function AddTableModal({ categories, onClose, onAdded }) {
-  const [category, setCategory] = useState('')
-  const [tableNo, setTableNo] = useState('')
-  const [seats, setSeats] = useState('2')
-  const [note, setNote] = useState('')
+/**
+ * Add or edit one table.
+ *
+ * The same form serves both: pass `table` to edit it, leave it out to add. An
+ * edit never touches the table's qr_token, so cards already printed and sitting
+ * on tables keep pointing at the right place.
+ */
+function TableModal({ table, categories, onClose, onSaved }) {
+  const editing = Boolean(table)
+
+  const [category, setCategory] = useState(table?.category ?? '')
+  const [tableNo, setTableNo] = useState(table?.table_no ?? '')
+  const [seats, setSeats] = useState(table ? String(table.seats) : '2')
+  const [note, setNote] = useState(table?.note ?? '')
   const [file, setFile] = useState(null)
-  const [preview, setPreview] = useState(null)
+  const [preview, setPreview] = useState(table?.image_url ?? null)
+  const [dropImage, setDropImage] = useState(false) // clear the existing photo
   const [toCrop, setToCrop] = useState(null)
   const [busy, setBusy] = useState(false)
   // Start in free-text mode when there's nothing to pick from yet.
@@ -213,10 +282,18 @@ function AddTableModal({ categories, onClose, onAdded }) {
 
   const onCropped = (cropped) => {
     setFile(cropped)
+    setDropImage(false)
     setToCrop(null)
     const reader = new FileReader()
     reader.onload = () => setPreview(reader.result)
     reader.readAsDataURL(cropped)
+  }
+
+  /** Take the photo off the table — a new one can still be chosen after this. */
+  const clearPhoto = () => {
+    setFile(null)
+    setPreview(null)
+    setDropImage(true)
   }
 
   const save = async (e) => {
@@ -232,9 +309,12 @@ function AddTableModal({ categories, onClose, onAdded }) {
       fd.append('seats', String(Number(seats)))
       fd.append('note', note.trim())
       if (file) fd.append('image', file)
-      const d = await api.addTable(fd)
-      toastOk('Table added')
-      onAdded(d.tables)
+      // Only meaningful on an edit, and only when no replacement was chosen.
+      else if (editing && dropImage) fd.append('remove_image', '1')
+
+      const d = editing ? await api.updateTable(table.id, fd) : await api.addTable(fd)
+      toastOk(editing ? 'Table updated' : 'Table added')
+      onSaved(d.tables)
     } catch (err) {
       alertErr(err)
       setBusy(false)
@@ -253,7 +333,7 @@ function AddTableModal({ categories, onClose, onAdded }) {
           className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-cardHover"
         >
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-extrabold text-brand-navy">Add table</h3>
+            <h3 className="text-lg font-extrabold text-brand-navy">{editing ? 'Edit table' : 'Add table'}</h3>
             <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-700"><X size={20} /></button>
           </div>
 
@@ -341,26 +421,44 @@ function AddTableModal({ categories, onClose, onAdded }) {
             <span className="mb-1.5 block text-sm font-semibold text-slate-700">
               Photo <span className="font-normal text-slate-400">(optional)</span>
             </span>
-            <button
-              type="button"
-              onClick={() => ref.current?.click()}
-              className="flex h-32 w-full flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border-2 border-dashed border-slate-300 text-slate-400 transition hover:border-brand-blue hover:text-brand-blue"
-            >
-              {preview ? (
-                <img src={preview} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <>
-                  <ImagePlus size={22} />
-                  <span className="text-xs font-medium">Upload &amp; crop a photo of the table</span>
-                </>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => ref.current?.click()}
+                className="flex h-32 w-full flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border-2 border-dashed border-slate-300 text-slate-400 transition hover:border-brand-blue hover:text-brand-blue"
+              >
+                {preview ? (
+                  <img src={preview} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <>
+                    <ImagePlus size={22} />
+                    <span className="text-xs font-medium">Upload &amp; crop a photo of the table</span>
+                  </>
+                )}
+              </button>
+              {preview && (
+                <button
+                  type="button"
+                  onClick={clearPhoto}
+                  title="Remove the photo"
+                  className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/75"
+                >
+                  <X size={15} />
+                </button>
               )}
-            </button>
+            </div>
+            {preview && <p className="mt-1.5 text-xs text-slate-400">Click the photo to replace it.</p>}
             <input ref={ref} type="file" accept="image/*" className="hidden" onChange={pick} />
           </div>
 
           <button type="submit" disabled={busy} className="btn-blue mt-5 w-full py-2.5">
-            {busy ? 'Adding…' : 'Add table'}
+            {busy ? 'Saving…' : editing ? 'Save changes' : 'Add table'}
           </button>
+          {editing && (
+            <p className="mt-2 text-center text-xs text-slate-400">
+              The printed QR card for this table keeps working — only what it shows changes.
+            </p>
+          )}
         </form>
       </div>
 

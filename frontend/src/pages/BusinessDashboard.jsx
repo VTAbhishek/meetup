@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Star, MessageSquare, ExternalLink, CornerDownRight, X, Pencil, Flag, Check, EyeOff, Globe, MapPin, Building2, Phone, ThumbsUp, Clock, GripVertical, Trash2, Camera, Film } from 'lucide-react'
 import { api } from '../api'
-import { confirmDelete, toastOk, alertErr } from '../alerts'
+import { confirmDelete, toastOk, toastInfo, alertErr } from '../alerts'
+import { useLiveOrders } from '../lib/useLiveOrders'
+import { armChime, playChime } from '../lib/chime'
 import { Stars } from '../components/Stars'
 import CoverCarousel from '../components/CoverCarousel'
 import CoverCropper from '../components/CoverCropper'
@@ -13,6 +15,7 @@ import HoursEditor from '../components/HoursEditor'
 import ShowcaseCards from '../components/ShowcaseCards'
 import MenuManager from '../components/MenuManager'
 import TableManager from '../components/TableManager'
+import OrdersManager from '../components/OrdersManager'
 import MapPicker from '../components/MapPicker'
 import MoodPicker from '../components/MoodPicker'
 import ReservationsManager from '../components/ReservationsManager'
@@ -58,27 +61,100 @@ export default function BusinessDashboard() {
     }
   }
 
-  // --- Notifications (derived from reviews the company hasn't dismissed) ---
+  // --- Dine-in orders, polled once and shared with the notification bell ---
+  const liveOrders = useLiveOrders()
+
+  const [soundOn, setSoundOn] = useState(() => localStorage.getItem('biz_order_sound') !== 'off')
+  const toggleSound = () => {
+    setSoundOn((on) => {
+      localStorage.setItem('biz_order_sound', on ? 'off' : 'on')
+      // Ring once when switching it on, so "on" is proven rather than promised.
+      if (!on) playChime()
+      return !on
+    })
+  }
+
+  // Let the browser make noise later without a click at that exact moment.
+  useEffect(armChime, [])
+
+  /**
+   * Ring the bell when an order appears that wasn't there a moment ago.
+   *
+   * The first poll only records what already exists — a dashboard opened at
+   * 8pm must not chime once for every order taken during the day.
+   */
+  const knownOrdersRef = useRef(null)
+  useEffect(() => {
+    const waiting = liveOrders.orders.filter((o) => o.status === 'placed')
+    const ids = new Set(waiting.map((o) => o.id))
+
+    if (knownOrdersRef.current === null) {
+      knownOrdersRef.current = ids
+      return
+    }
+    const fresh = waiting.filter((o) => !knownOrdersRef.current.has(o.id))
+    knownOrdersRef.current = ids
+
+    if (fresh.length) {
+      if (soundOn) playChime()
+      toastInfo(
+        fresh.length === 1
+          ? `New order ${fresh[0].ref} · ${fresh[0].table_label}`
+          : `${fresh.length} new orders`
+      )
+    }
+  }, [liveOrders.orders, soundOn])
+
+  // --- Notifications: reviews awaiting attention, and orders still in progress ---
   const [seen, setSeen] = useState(() => {
     try { return new Set(JSON.parse(localStorage.getItem('biz_seen_reviews') || '[]')) } catch { return new Set() }
   })
   const dismissNotif = (id) => {
     setSeen((prev) => {
-      const next = new Set(prev)
-      next.add(id)
+      const next = new Set(prev).add(id)
       localStorage.setItem('biz_seen_reviews', JSON.stringify([...next]))
       return next
     })
   }
-  const notifications = (data?.reviews || [])
+
+  /**
+   * Only orders that still need something doing appear here.
+   *
+   * These cannot be clicked away: a guest is sitting at a table waiting for
+   * food, and a notification dismissed by a stray click is an order nobody
+   * cooks. The only way one leaves the bell is the kitchen marking it served
+   * (or cancelling it), at which point it drops out of this list on the next
+   * poll and the notification clears itself. Clicking one jumps to the order
+   * instead, which is what the click was probably for.
+   */
+  const orderNotifications = liveOrders.orders
+    .filter((o) => o.status === 'placed' || o.status === 'preparing')
+    .map((o) => ({
+      id: `order-${o.id}`,
+      time: o.created_at,
+      tone: 'order',
+      status: o.status,
+      dismissible: false,
+      target: 'orders-card',
+      text:
+        o.status === 'placed'
+          ? `New order ${o.ref} · ${o.table_label} — ${o.items.length} ${o.items.length === 1 ? 'dish' : 'dishes'}`
+          : `Order ${o.ref} · ${o.table_label} — being prepared`,
+    }))
+
+  const reviewNotifications = (data?.reviews || [])
     .filter((r) => !seen.has(r.id))
     .map((r) => ({
       id: r.id,
       time: r.created_at,
+      tone: 'review',
       text: r.is_approved
         ? `New ${r.rating}★ review from ${r.customer_name}`
         : `${r.customer_name} left a ${r.rating}★ review awaiting your approval`,
     }))
+
+  // Orders first: a customer is sitting at a table waiting for food.
+  const notifications = [...orderNotifications, ...reviewNotifications]
 
   const published = (data?.reviews || [])
     .filter((r) => r.is_approved)
@@ -158,8 +234,15 @@ export default function BusinessDashboard() {
             {/* Menu items customers can pre-order (with availability switch) */}
             <MenuManager />
 
-            {/* Bookable tables, grouped by category (VIP / Family / Couple…) */}
-            <TableManager />
+            {/* Bookable tables, grouped by category (VIP / Family / Couple…).
+                Needs the company for the name printed on the QR cards. */}
+            <TableManager company={data.company} />
+
+            {/* Orders guests send by scanning a table's QR card.
+                The id is what an order notification scrolls to. */}
+            <div id="orders-card" className="scroll-mt-20">
+              <OrdersManager {...liveOrders} soundOn={soundOn} onToggleSound={toggleSound} />
+            </div>
 
             {/* Reservations customers have requested */}
             <ReservationsManager />
@@ -245,9 +328,12 @@ export default function BusinessDashboard() {
                 <div className="card p-10 text-center text-slate-500">No reviews yet.</div>
               ) : (
                 <div className="card overflow-hidden">
-                  <div className="overflow-x-auto">
+                  {/* Scrolls both ways: the table is wider than a phone, and a
+                      busy company's review list is longer than the screen. */}
+                  <div className="card-scroll-lg overflow-x-auto pr-0">
                     <table className="w-full min-w-[680px] text-sm">
-                      <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+                      {/* Pinned so the columns stay labelled while scrolling */}
+                      <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs uppercase text-slate-500">
                         <tr>
                           <th className="px-4 py-3">Reviewer</th>
                           <th className="px-4 py-3">Rating</th>

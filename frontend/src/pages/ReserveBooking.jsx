@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { CalendarClock, ArrowLeft, Users, Phone, User, ClipboardList, Check, UtensilsCrossed, Plus, Minus, ShoppingCart, Trash2, X, Armchair, Info, RefreshCw, AlertTriangle } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../auth'
@@ -19,7 +19,11 @@ const TABLE_POLL_MS = 10000
  */
 export default function ReserveBooking() {
   const { slug } = useParams()
+  const [search] = useSearchParams()
   const { user } = useAuth()
+
+  // Set when the customer arrived by scanning the QR card standing on a table.
+  const qrToken = search.get('table')
 
   const [company, setCompany] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -42,6 +46,11 @@ export default function ReserveBooking() {
   const [tablesAt, setTablesAt] = useState(null)       // when availability last refreshed
   const [takenNote, setTakenNote] = useState('')       // "someone just booked your table"
   const [refreshKey, setRefreshKey] = useState(0)      // bump to force a re-check
+  const [qrTable, setQrTable] = useState(null)         // table resolved from a scanned QR
+  const [qrNote, setQrNote] = useState('')             // why a scanned table couldn't be used
+  // The QR preselects once. Without this the availability poll would keep
+  // re-selecting it every few seconds, fighting anyone who picks another table.
+  const qrAppliedRef = useRef(false)
 
   // The poll runs on a timer and can't close over the latest state, so mirror
   // the current selection into refs it can read.
@@ -127,6 +136,41 @@ export default function ReserveBooking() {
       window.removeEventListener('focus', onVisible)
     }
   }, [slug, form.res_date, form.time_from, form.time_to, refreshKey])
+
+  // ---- Arriving from a table's QR card ----
+  // The card carries a token rather than the table id, so resolve it once.
+  useEffect(() => {
+    if (!qrToken) return
+    let alive = true
+    api
+      .tableByToken(qrToken)
+      .then((d) => alive && setQrTable(d.table))
+      .catch(() => alive && setQrNote('That QR code was not recognised — please pick a table below.'))
+    return () => { alive = false }
+  }, [qrToken])
+
+  // Apply it as soon as the picker has loaded, so the customer lands with their
+  // own table already chosen. It still has to be free right now: a code stuck to
+  // a table someone else has already booked for this slot must not silently win.
+  useEffect(() => {
+    if (!qrTable || qrAppliedRef.current || tableData.tables.length === 0) return
+    const live = tableData.tables.find((t) => t.id === qrTable.id)
+    qrAppliedRef.current = true
+
+    if (!live) {
+      setQrNote(`Table ${qrTable.table_no} is not open for booking right now — please pick another below.`)
+      return
+    }
+    if (live.booked) {
+      setQrNote(`Table ${qrTable.table_no} is already taken for this time — pick another time or table.`)
+      setTableCat(live.category)
+      return
+    }
+    setTableCat(live.category)
+    setTableId(live.id)
+    setQrNote('')
+    toastInfo(`Table ${live.table_no} selected from the QR code`)
+  }, [qrTable, tableData])
 
   const itemsById = useMemo(() => Object.fromEntries(menu.items.map((i) => [i.id, i])), [menu])
   const shownItems = useMemo(
@@ -327,6 +371,17 @@ export default function ReserveBooking() {
                 Availability updates automatically. Tables already booked for your date and time are shown as
                 unavailable.
               </p>
+
+              {/* Why the table on the scanned QR card couldn't be selected */}
+              {qrNote && (
+                <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                  <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                  <span className="flex-1">{qrNote}</span>
+                  <button type="button" onClick={() => setQrNote('')} className="shrink-0 text-amber-400 hover:text-amber-700">
+                    <X size={15} />
+                  </button>
+                </div>
+              )}
 
               {/* Shown when someone else books the table this customer had picked */}
               {takenNote && (

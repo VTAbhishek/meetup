@@ -25,10 +25,10 @@ CREATE TABLE IF NOT EXISTS `moods` (
 INSERT INTO `moods` (`slug`,`name`,`hint`,`icon`,`sort_order`) VALUES
   ('family-outing',   'Family short outing',     'Relaxed, kid-friendly, easy for a short family trip', 'Users',       1),
   ('quick-bite',      'Quick bite with friends', 'Fast, casual, good for a short catch-up',             'Sandwich',    2),
-  ('late-night',      'Late night spot',         'Open late — good for a night out',                    'Moon',        3),
+  ('late-night',      'Late night spot',         'Open late - good for a night out',                    'Moon',        3),
   ('romantic',        'Romantic date',           'Quiet and intimate, good for two',                    'Heart',       4),
   ('work-friendly',   'Work or study friendly',  'Calm, with space to sit and work',                    'Laptop',      5),
-  ('celebration',     'Big group celebration',   'Room for a crowd — birthdays and parties',            'PartyPopper', 6)
+  ('celebration',     'Big group celebration',   'Room for a crowd - birthdays and parties',            'PartyPopper', 6)
 ON DUPLICATE KEY UPDATE
   `name` = VALUES(`name`), `hint` = VALUES(`hint`),
   `icon` = VALUES(`icon`), `sort_order` = VALUES(`sort_order`);

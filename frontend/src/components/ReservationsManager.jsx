@@ -69,7 +69,7 @@ export default function ReservationsManager() {
           No {filter} reservations.
         </p>
       ) : (
-        <ul className="space-y-3">
+        <ul className="card-scroll-lg space-y-3">
           {shown.map((r) => (
             <ReservationRow key={r.id} r={r} onChanged={load} />
           ))}

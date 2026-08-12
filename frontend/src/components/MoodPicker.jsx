@@ -70,7 +70,8 @@ export default function MoodPicker({ onSaved }) {
         <Spinner />
       ) : (
         <>
-          <div className="grid gap-2.5 sm:grid-cols-2">
+          {/* Scrolls once an admin has added enough moods to outgrow the card */}
+          <div className="card-scroll grid gap-2.5 sm:grid-cols-2">
             {moods.map((m) => {
               const on = selected.includes(m.id)
               return (

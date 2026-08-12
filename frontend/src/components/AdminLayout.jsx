@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { Star, LayoutDashboard, Building2, Users, MessageSquare, Tag, MapPin, LogOut, ExternalLink } from 'lucide-react'
+import { Star, LayoutDashboard, Building2, Users, MessageSquare, Tag, Sparkles, MapPin, LogOut, ExternalLink } from 'lucide-react'
 import { useAuth } from '../auth'
 import { api } from '../api'
 import { colorFor, initials } from '../lib'
@@ -9,6 +9,7 @@ const NAV = [
   { to: '/admin', end: true, icon: LayoutDashboard, label: 'Overview' },
   { to: '/admin/companies', icon: Building2, label: 'Companies', badge: 'companies' },
   { to: '/admin/categories', icon: Tag, label: 'Categories' },
+  { to: '/admin/moods', icon: Sparkles, label: 'Moods' },
   { to: '/admin/locations', icon: MapPin, label: 'Locations' },
   { to: '/admin/customers', icon: Users, label: 'Customers', badge: 'customers' },
   { to: '/admin/reviews', icon: MessageSquare, label: 'Reviews' },

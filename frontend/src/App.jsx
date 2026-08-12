@@ -14,6 +14,7 @@ import Register from './pages/Register'
 import BusinessLogin from './pages/BusinessLogin'
 import BusinessRegister from './pages/BusinessRegister'
 import AdminLogin from './pages/AdminLogin'
+import TableOrder from './pages/TableOrder'
 import Dashboard from './pages/Dashboard'
 import Settings from './pages/Settings'
 import BusinessDashboard from './pages/BusinessDashboard'
@@ -21,6 +22,7 @@ import AdminLayout from './components/AdminLayout'
 import AdminOverview from './pages/admin/Overview'
 import AdminCompanies from './pages/admin/Companies'
 import AdminCategories from './pages/admin/Categories'
+import AdminMoods from './pages/admin/Moods'
 import AdminLocations from './pages/admin/Locations'
 import AdminCustomers from './pages/admin/Customers'
 import AdminReviews from './pages/admin/Reviews'
@@ -72,6 +74,11 @@ export default function App() {
       <Route path="/business/register" element={<BusinessRegister />} />
       <Route path="/admin/login" element={<AdminLogin />} />
 
+      {/* Scanned from the QR card on a table. Deliberately outside the site
+          layout: a guest at a table wants the menu, not a navbar — and no
+          account is required to order. */}
+      <Route path="/t/:token" element={<TableOrder />} />
+
       {/* Role dashboards (own header) */}
       <Route
         path="/business"
@@ -93,6 +100,7 @@ export default function App() {
         <Route index element={<AdminOverview />} />
         <Route path="companies" element={<AdminCompanies />} />
         <Route path="categories" element={<AdminCategories />} />
+        <Route path="moods" element={<AdminMoods />} />
         <Route path="locations" element={<AdminLocations />} />
         <Route path="customers" element={<AdminCustomers />} />
         <Route path="reviews" element={<AdminReviews />} />

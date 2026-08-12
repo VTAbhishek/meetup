@@ -48,7 +48,7 @@ export default function ShowcaseCards() {
       {loading ? (
         <Spinner />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="card-scroll grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {cards.map((c) => (
             <div key={c.id} className="relative overflow-hidden rounded-xl border border-slate-200">
               <img src={c.thumb_url} alt={c.title} className="h-24 w-full object-cover" />
