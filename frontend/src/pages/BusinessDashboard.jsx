@@ -23,17 +23,45 @@ import DashboardHeader from '../components/DashboardHeader'
 import Spinner from '../components/Spinner'
 import { colorFor, initials, ratingLabel, timeAgo } from '../lib'
 
+// Where the desktop installer lives on the server (upload the .exe here once).
+const POS_INSTALLER_URL = 'http://meetup.sourcecode.lk/downloads/Meetup-POS-Setup.exe'
+
 /**
  * Launch the installed Meetup POS desktop app via its meetuppos:// protocol,
- * handing over the current auth token so it opens already signed in. If the app
- * isn't installed the browser simply does nothing, so we point the user to the
- * download as a fallback.
+ * handing over the current auth token so it opens already signed in.
+ *
+ * We can't ask the OS "is this app installed?", so we use the standard trick:
+ * fire the protocol, then watch whether the browser loses focus. If the app is
+ * installed the OS takes over and this tab goes to the background; if nothing
+ * happens within ~1.5s we assume it isn't installed and send the user to the
+ * installer download instead.
  */
 function openPosApp() {
   const token = localStorage.getItem('token') || ''
   const site = `${window.location.origin}/#/business/pos`
   const url = `meetuppos://open?site=${encodeURIComponent(site)}&token=${encodeURIComponent(token)}`
-  window.location.href = url
+
+  let launched = false
+  const markLaunched = () => { launched = true }
+  window.addEventListener('blur', markLaunched)
+  document.addEventListener('visibilitychange', markLaunched)
+
+  const timer = setTimeout(() => {
+    window.removeEventListener('blur', markLaunched)
+    document.removeEventListener('visibilitychange', markLaunched)
+    if (!launched && !document.hidden) {
+      // App isn't installed — download the installer.
+      window.location.href = POS_INSTALLER_URL
+    }
+  }, 1500)
+
+  // Some browsers throw on an unknown protocol; the fallback timer still runs.
+  try {
+    window.location.href = url
+  } catch {
+    clearTimeout(timer)
+    window.location.href = POS_INSTALLER_URL
+  }
 }
 
 export default function BusinessDashboard() {

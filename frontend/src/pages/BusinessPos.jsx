@@ -68,6 +68,11 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 }
 
+// True when running inside the Meetup POS desktop shell (Electron passes
+// ?desktop=1). In that mode we hide the link back into the web dashboard so the
+// app stays POS-only.
+const isDesktopApp = /[?&]desktop=1/.test(window.location.hash)
+
 export default function BusinessPos() {
   const [company, setCompany] = useState(null)
   const [tab, setTab] = useState('sell')
@@ -92,9 +97,11 @@ export default function BusinessPos() {
       <DashboardHeader badge="POS" company={company} />
       <div className="container-page py-5">
         <div className="mb-5 flex flex-wrap items-center gap-3">
-          <Link to="/business" className="btn-ghost py-2.5 text-sm">
-            <ArrowLeft size={18} /> Dashboard
-          </Link>
+          {!isDesktopApp && (
+            <Link to="/business" className="btn-ghost py-2.5 text-sm">
+              <ArrowLeft size={18} /> Dashboard
+            </Link>
+          )}
           <h1 className="text-2xl font-extrabold text-brand-navy">Point of Sale</h1>
           <div className="ml-auto inline-flex rounded-full bg-white p-1 shadow-card">
             {tabs.map((t) => (
