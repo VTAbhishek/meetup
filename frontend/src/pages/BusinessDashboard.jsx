@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Star, MessageSquare, ExternalLink, CornerDownRight, X, Pencil, Flag, Check, EyeOff, Globe, MapPin, Building2, Phone, ThumbsUp, Clock, GripVertical, Trash2, Camera, Film } from 'lucide-react'
+import { Star, MessageSquare, ExternalLink, CornerDownRight, X, Pencil, Flag, Check, EyeOff, Globe, MapPin, Building2, Phone, ThumbsUp, Clock, GripVertical, Trash2, Camera, Film, CalendarClock } from 'lucide-react'
 import { api } from '../api'
 import { confirmDelete, toastOk, toastInfo, alertErr } from '../alerts'
 import { useLiveOrders } from '../lib/useLiveOrders'
@@ -23,12 +23,87 @@ import DashboardHeader from '../components/DashboardHeader'
 import Spinner from '../components/Spinner'
 import { colorFor, initials, ratingLabel, timeAgo } from '../lib'
 
+/**
+ * The dashboard's cards, each built on demand.
+ *
+ * Defined once and stacked in whichever order the current view asks for, so the
+ * two views can't drift apart the way two copies of the same JSX would. Every
+ * card carries a stable key: reordering then moves the mounted components
+ * instead of tearing them down and refetching.
+ */
+const SECTIONS = {
+  about: ({ data, setData }) => (
+    // Keyed on the saved html as well, so a save re-mounts the editor with the
+    // new content rather than leaving the old draft in the box.
+    <AboutEditor
+      key={`about-${data.company.about_html || 'empty'}`}
+      company={data.company}
+      onSaved={() => api.myCompany().then(setData)}
+    />
+  ),
+  hours: () => <HoursEditor key="hours" />,
+  map: ({ data, setData }) => (
+    <MapPicker
+      key="map"
+      company={data.company}
+      onSaved={(loc) => setData((d) => ({ ...d, company: { ...d.company, ...loc } }))}
+    />
+  ),
+  moods: () => <MoodPicker key="moods" />,
+  showcase: () => <ShowcaseCards key="showcase" />,
+  menu: () => <MenuManager key="menu" />,
+  tables: ({ data }) => <TableManager key="tables" company={data.company} />,
+  orders: ({ liveOrders, soundOn, toggleSound }) => (
+    // The id is what an order notification scrolls to.
+    <div key="orders" id="orders-card" className="scroll-mt-20">
+      <OrdersManager {...liveOrders} soundOn={soundOn} onToggleSound={toggleSound} />
+    </div>
+  ),
+  reservations: () => <ReservationsManager key="reservations" />,
+}
+
+/**
+ * 'company' builds the public profile; 'reservation' runs the day.
+ *
+ * Neither view hides anything — whichever cards aren't the point of the view
+ * simply sit further down, so nothing a company set up can go missing because
+ * of which button is pressed.
+ */
+const SECTION_ORDER = {
+  company:     ['about', 'hours', 'map', 'moods', 'showcase', 'menu', 'tables', 'orders', 'reservations'],
+  reservation: ['reservations', 'orders', 'tables', 'menu', 'hours', 'about', 'map', 'moods', 'showcase'],
+}
+
+/** One of the two small buttons that pick the stacking order. */
+function ViewTab({ on, onClick, icon: Icon, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold transition ${
+        on
+          ? 'bg-brand-blue text-white shadow-sm'
+          : 'border border-slate-300 bg-white text-slate-600 hover:border-brand-blue hover:text-brand-blue'
+      }`}
+    >
+      <Icon size={15} /> {children}
+    </button>
+  )
+}
+
 export default function BusinessDashboard() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [replyTo, setReplyTo] = useState(null)
   const [editing, setEditing] = useState(false)
   const [viewReview, setViewReview] = useState(null)
+
+  // Which way round the dashboard cards are stacked. 'company' is the default:
+  // the profile-building cards first. 'reservation' puts the day-to-day work —
+  // reservations, then the orders coming off the table QR codes — at the top.
+  // Nothing is hidden either way; the order just follows what you came to do.
+  const [view, setView] = useState('company')
 
   const load = () => {
     setLoading(true)
@@ -209,43 +284,26 @@ export default function BusinessDashboard() {
               </div>
             </div>
 
-            {/* About us — rich text shown on the public page */}
-            <AboutEditor
-              key={data.company.about_html || 'empty'}
-              company={data.company}
-              onSaved={() => api.myCompany().then(setData)}
-            />
-
-            {/* Opening hours (weekly + today-only override) */}
-            <HoursEditor />
-
-            {/* Map pin shown to customers on the public page */}
-            <MapPicker
-              company={data.company}
-              onSaved={(loc) => setData((d) => ({ ...d, company: { ...d.company, ...loc } }))}
-            />
-
-            {/* Mood tags customers filter by, set alongside the location */}
-            <MoodPicker />
-
-            {/* Showcase cards (shown on the public page, click reveals 2nd image) */}
-            <ShowcaseCards />
-
-            {/* Menu items customers can pre-order (with availability switch) */}
-            <MenuManager />
-
-            {/* Bookable tables, grouped by category (VIP / Family / Couple…).
-                Needs the company for the name printed on the QR cards. */}
-            <TableManager company={data.company} />
-
-            {/* Orders guests send by scanning a table's QR card.
-                The id is what an order notification scrolls to. */}
-            <div id="orders-card" className="scroll-mt-20">
-              <OrdersManager {...liveOrders} soundOn={soundOn} onToggleSound={toggleSound} />
+            {/* Which order to stack the cards in */}
+            <div className="mt-4 flex gap-2">
+              <ViewTab on={view === 'company'} onClick={() => setView('company')} icon={Building2}>
+                Company
+              </ViewTab>
+              <ViewTab on={view === 'reservation'} onClick={() => setView('reservation')} icon={CalendarClock}>
+                Reservation
+              </ViewTab>
             </div>
 
-            {/* Reservations customers have requested */}
-            <ReservationsManager />
+            {/* The cards themselves. Each is keyed, so switching the order moves
+                the existing components rather than rebuilding them — a menu or
+                a table list already loaded doesn't refetch on every toggle. */}
+            {SECTION_ORDER[view].map((name) => SECTIONS[name]({
+              data,
+              setData,
+              liveOrders,
+              soundOn,
+              toggleSound,
+            }))}
 
             {/* Stats */}
             <div className="mt-6 grid gap-4 sm:grid-cols-3">

@@ -272,6 +272,73 @@ export default function ReserveBooking() {
       </Link>
 
       <form onSubmit={submit} className="grid gap-6 lg:grid-cols-5">
+        {/* Menu — full width across the top.
+            It used to sit in the narrow left column, where three items to a row
+            left no room for a dish name: "Cheese Kottu" rendered as "Chee…".
+            Nobody can order from a menu they can't read, so it gets the whole
+            width and the names are allowed to wrap. */}
+        {hasMenu && (
+          <div className="card p-6 sm:p-8 lg:col-span-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="flex items-center gap-2 text-lg font-extrabold text-brand-navy">
+                <UtensilsCrossed size={20} className="text-brand-green" /> Pre-order food
+                <span className="text-sm font-normal text-slate-400">(optional)</span>
+              </h2>
+              <label className="flex items-center gap-2 text-sm">
+                <span className="font-semibold text-slate-500">Category</span>
+                <select
+                  value={cat}
+                  onChange={(e) => setCat(e.target.value)}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 focus:border-brand-blue focus:outline-none"
+                >
+                  <option value="all">All items</option>
+                  {menu.categories.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </label>
+            </div>
+
+            {/* Cap the list at ~3 rows tall; more items scroll inside the card. */}
+            <div className="card-scroll mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {shownItems.map((it) => {
+                const qty = cart[it.id] || 0
+                return (
+                  <div
+                    key={it.id}
+                    onClick={() => setDetail(it)}
+                    title="Click for details"
+                    className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 p-3 transition hover:border-brand-blue/60 hover:shadow-sm"
+                  >
+                    {it.image_url ? (
+                      <img src={it.image_url} alt={it.name} className="h-16 w-16 shrink-0 rounded-lg object-cover" />
+                    ) : (
+                      <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-brand-silver text-slate-300">
+                        <UtensilsCrossed size={22} />
+                      </span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      {/* Wraps to a second line rather than truncating — the
+                          dish name is the one thing that must stay readable. */}
+                      <p className="line-clamp-2 font-semibold leading-snug text-brand-navy">{it.name}</p>
+                      <p className="truncate text-xs text-slate-400">{it.category}</p>
+                      <p className="text-sm font-bold text-brand-green">{money(it.price)}</p>
+                    </div>
+                    {/* Cart controls — don't let clicks bubble up to open the detail card. */}
+                    <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+                      {qty === 0 ? (
+                        <button type="button" onClick={() => add(it.id)} className="btn-ghost px-3 py-1.5 text-sm">
+                          <Plus size={15} /> Add
+                        </button>
+                      ) : (
+                        <Stepper qty={qty} onDec={() => setQty(it.id, qty - 1)} onInc={() => setQty(it.id, qty + 1)} />
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Left: reservation details */}
         <div className="lg:col-span-3">
           <div className="card p-6 sm:p-8">
@@ -475,66 +542,6 @@ export default function ReserveBooking() {
             </div>
           )}
 
-          {/* Menu — browse by category, add to cart */}
-          {hasMenu && (
-            <div className="card mt-6 p-6 sm:p-8">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="flex items-center gap-2 text-lg font-extrabold text-brand-navy">
-                  <UtensilsCrossed size={20} className="text-brand-green" /> Pre-order food
-                  <span className="text-sm font-normal text-slate-400">(optional)</span>
-                </h2>
-                <label className="flex items-center gap-2 text-sm">
-                  <span className="font-semibold text-slate-500">Category</span>
-                  <select
-                    value={cat}
-                    onChange={(e) => setCat(e.target.value)}
-                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 focus:border-brand-blue focus:outline-none"
-                  >
-                    <option value="all">All items</option>
-                    {menu.categories.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </label>
-              </div>
-
-              {/* Cap the list at ~5 rows tall; more items scroll inside the card. */}
-              <div className="mt-4 grid max-h-[470px] gap-3 overflow-y-auto pr-1.5 sm:grid-cols-2">
-                {shownItems.map((it) => {
-                  const qty = cart[it.id] || 0
-                  return (
-                    <div
-                      key={it.id}
-                      onClick={() => setDetail(it)}
-                      title="Click for details"
-                      className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 p-2.5 transition hover:border-brand-blue/60 hover:shadow-sm"
-                    >
-                      {it.image_url ? (
-                        <img src={it.image_url} alt={it.name} className="h-16 w-16 shrink-0 rounded-lg object-cover" />
-                      ) : (
-                        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-brand-silver text-slate-300">
-                          <UtensilsCrossed size={22} />
-                        </span>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-semibold text-brand-navy">{it.name}</p>
-                        <p className="text-xs text-slate-400">{it.category}</p>
-                        <p className="text-sm font-bold text-brand-green">{money(it.price)}</p>
-                      </div>
-                      {/* Cart controls — don't let clicks bubble up to open the detail card. */}
-                      <div onClick={(e) => e.stopPropagation()} className="shrink-0">
-                        {qty === 0 ? (
-                          <button type="button" onClick={() => add(it.id)} className="btn-ghost px-3 py-1.5 text-sm">
-                            <Plus size={15} /> Add
-                          </button>
-                        ) : (
-                          <Stepper qty={qty} onDec={() => setQty(it.id, qty - 1)} onInc={() => setQty(it.id, qty + 1)} />
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Right: cart + submit (sticky on desktop) */}
