@@ -8,6 +8,7 @@ import { api } from '../api'
 import { toastOk, alertErr } from '../alerts'
 import DashboardHeader from '../components/DashboardHeader'
 import Spinner from '../components/Spinner'
+import { isPosOnly } from '../lib'
 
 const money = (n) => 'Rs. ' + Number(n || 0).toLocaleString('en-LK', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const todayStr = () => {
@@ -73,10 +74,10 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 }
 
-// True when running inside the Meetup POS desktop shell (Electron passes
-// ?desktop=1). In that mode we hide the link back into the web dashboard so the
-// app stays POS-only.
-const isDesktopApp = /[?&]desktop=1/.test(window.location.hash)
+// True when running inside the Meetup POS desktop shell (Electron user-agent
+// or an explicit ?desktop=1 flag). In that mode we hide every link out of the
+// POS screen so the app stays POS-only.
+const isDesktopApp = isPosOnly()
 
 export default function BusinessPos() {
   const [company, setCompany] = useState(null)
@@ -99,7 +100,7 @@ export default function BusinessPos() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <DashboardHeader badge="POS" company={company} />
+      <DashboardHeader badge="POS" company={company} posOnly={isDesktopApp} />
       <div className="container-page py-5">
         <div className="mb-5 flex flex-wrap items-center gap-3">
           {!isDesktopApp && (
@@ -214,7 +215,7 @@ function SellTab({ company, menu }) {
       <div className="card grid place-items-center gap-3 p-16 text-center">
         <UtensilsCrossed size={40} className="text-slate-300" />
         <p className="text-slate-500">No available menu items yet.</p>
-        <Link to="/business" className="btn-blue py-2.5 text-sm">Manage your menu</Link>
+        {!isDesktopApp && <Link to="/business" className="btn-blue py-2.5 text-sm">Manage your menu</Link>}
       </div>
     )
   }

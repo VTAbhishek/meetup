@@ -18,6 +18,19 @@ export function categoryIcon(category) {
   return map[category] || Store
 }
 
+/**
+ * True when we're running inside the Meetup POS desktop shell (or a POS-only
+ * window). In that mode the app must stay locked to the POS screen — no links
+ * back into the public website. We accept two signals: the Electron shell
+ * (its user-agent contains "Electron") and an explicit `desktop=1` flag on the
+ * URL, so a plain browser tab opened POS-only still gets locked down.
+ */
+export function isPosOnly() {
+  if (typeof navigator !== 'undefined' && /electron/i.test(navigator.userAgent || '')) return true
+  if (typeof window === 'undefined') return false
+  return /[?&]desktop=1/.test(window.location.hash) || /[?&]desktop=1/.test(window.location.search)
+}
+
 /** Deterministic brand-ish colour for an avatar/logo letter. */
 export function colorFor(str = '') {
   const palette = ['#7C3AED', '#DB2777', '#A855F7', '#9333EA', '#EC4899', '#C026D3', '#8B5CF6']

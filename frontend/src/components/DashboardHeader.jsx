@@ -17,24 +17,32 @@ const LOOK = {
   review:    { icon: Bell,          label: '',          chip: 'bg-amber-100 text-amber-600', row: '' },
 }
 
-export default function DashboardHeader({ badge, accent = 'bg-brand-blue', notifications = [], onDismiss, company = null }) {
+export default function DashboardHeader({ badge, accent = 'bg-brand-blue', notifications = [], onDismiss, company = null, posOnly = false }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
   const doLogout = async () => {
     await logout()
-    navigate('/')
+    // In the POS-only shell there is nowhere else to go — send them to the
+    // POS sign-in rather than the public website home.
+    navigate(posOnly ? '/business/login' : '/')
   }
+
+  // The brand mark links home on the website, but in the POS-only shell it must
+  // NOT be a way out into the public site — render it as a plain badge there.
+  const brand = (
+    <span className="flex items-center gap-2">
+      <span className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-green">
+        <Star size={20} color="white" fill="white" strokeWidth={0} />
+      </span>
+      <span className="text-xl font-extrabold text-brand-navy">Meetup</span>
+    </span>
+  )
 
   return (
     <header className="border-b border-slate-200 bg-white">
       <div className="container-page flex h-16 items-center gap-3">
-        <Link to="/" className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-brand-green">
-            <Star size={20} color="white" fill="white" strokeWidth={0} />
-          </span>
-          <span className="text-xl font-extrabold text-brand-navy">Meetup</span>
-        </Link>
+        {posOnly ? brand : <Link to="/" className="flex items-center gap-2">{brand}</Link>}
         {badge && (
           <span className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide text-white ${accent}`}>
             {badge}
@@ -43,7 +51,7 @@ export default function DashboardHeader({ badge, accent = 'bg-brand-blue', notif
         <div className="ml-auto flex items-center gap-3">
           {onDismiss && <NotificationBell notifications={notifications} onDismiss={onDismiss} />}
           {company ? (
-            <CompanyChip user={user} company={company} />
+            <CompanyChip user={user} company={company} posOnly={posOnly} />
           ) : (
             <div className="hidden items-center gap-2 sm:flex">
               <span
@@ -65,7 +73,7 @@ export default function DashboardHeader({ badge, accent = 'bg-brand-blue', notif
 }
 
 /** Clickable profile chip that reveals the company's key details. */
-function CompanyChip({ user, company }) {
+function CompanyChip({ user, company, posOnly = false }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -118,7 +126,7 @@ function CompanyChip({ user, company }) {
             <DetailRow icon={Mail} value={user?.email} />
           </div>
 
-          {company.slug && (
+          {!posOnly && company.slug && (
             <Link to={`/review/${company.slug}`} className="flex items-center justify-center gap-1.5 border-t border-slate-100 py-3 text-sm font-semibold text-brand-blue hover:bg-slate-50">
               View public page <ExternalLink size={14} />
             </Link>

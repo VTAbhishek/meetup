@@ -107,7 +107,9 @@ const POS_INSTALLER_URL = 'http://meetup.sourcecode.lk/downloads/Meetup-POS-Setu
  */
 function openPosApp() {
   const token = localStorage.getItem('token') || ''
-  const site = `${window.location.origin}/#/business/pos`
+  // The desktop=1 flag locks the POS screen down to POS-only (no links back
+  // into the public website) even before the Electron user-agent is checked.
+  const site = `${window.location.origin}/#/business/pos?desktop=1`
   const url = `meetuppos://open?site=${encodeURIComponent(site)}&token=${encodeURIComponent(token)}`
 
   let launched = false
