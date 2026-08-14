@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Star, MessageSquare, ExternalLink, CornerDownRight, X, Pencil, Flag, Check, EyeOff, Globe, MapPin, Building2, Phone, ThumbsUp, Clock, GripVertical, Trash2, Camera, Film } from 'lucide-react'
+import { Star, MessageSquare, ExternalLink, CornerDownRight, X, Pencil, Flag, Check, EyeOff, Globe, MapPin, Building2, Phone, ThumbsUp, Clock, GripVertical, Trash2, Camera, Film, Receipt } from 'lucide-react'
 import { api } from '../api'
 import { confirmDelete, toastOk, toastInfo, alertErr } from '../alerts'
 import { useLiveOrders } from '../lib/useLiveOrders'
@@ -22,6 +22,19 @@ import ReservationsManager from '../components/ReservationsManager'
 import DashboardHeader from '../components/DashboardHeader'
 import Spinner from '../components/Spinner'
 import { colorFor, initials, ratingLabel, timeAgo } from '../lib'
+
+/**
+ * Launch the installed Meetup POS desktop app via its meetuppos:// protocol,
+ * handing over the current auth token so it opens already signed in. If the app
+ * isn't installed the browser simply does nothing, so we point the user to the
+ * download as a fallback.
+ */
+function openPosApp() {
+  const token = localStorage.getItem('token') || ''
+  const site = `${window.location.origin}/#/business/pos`
+  const url = `meetuppos://open?site=${encodeURIComponent(site)}&token=${encodeURIComponent(token)}`
+  window.location.href = url
+}
 
 export default function BusinessDashboard() {
   const [data, setData] = useState(null)
@@ -197,6 +210,9 @@ export default function BusinessDashboard() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-3">
+                  <button onClick={openPosApp} className="btn-blue py-2 text-sm">
+                    <Receipt size={15} /> Open POS
+                  </button>
                   <button onClick={() => setEditing(true)} className="btn-green py-2 text-sm">
                     <Pencil size={15} /> Edit profile
                   </button>
