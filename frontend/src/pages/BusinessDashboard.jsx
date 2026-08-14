@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+<<<<<<< HEAD
 import { Star, MessageSquare, ExternalLink, CornerDownRight, X, Pencil, Flag, Check, EyeOff, Globe, MapPin, Building2, Phone, ThumbsUp, Clock, GripVertical, Trash2, Camera, Film, CalendarClock } from 'lucide-react'
+=======
+import { Star, MessageSquare, ExternalLink, CornerDownRight, X, Pencil, Flag, Check, EyeOff, Globe, MapPin, Building2, Phone, ThumbsUp, Clock, GripVertical, Trash2, Camera, Film, Receipt } from 'lucide-react'
+>>>>>>> 15128662ac222836846d26fe68af9799c39a4e83
 import { api } from '../api'
 import { confirmDelete, toastOk, toastInfo, alertErr } from '../alerts'
 import { useLiveOrders } from '../lib/useLiveOrders'
@@ -23,6 +27,7 @@ import DashboardHeader from '../components/DashboardHeader'
 import Spinner from '../components/Spinner'
 import { colorFor, initials, ratingLabel, timeAgo } from '../lib'
 
+<<<<<<< HEAD
 /**
  * The dashboard's cards, each built on demand.
  *
@@ -90,6 +95,47 @@ function ViewTab({ on, onClick, icon: Icon, children }) {
       <Icon size={15} /> {children}
     </button>
   )
+=======
+// Where the desktop installer lives on the server (upload the .exe here once).
+const POS_INSTALLER_URL = 'http://meetup.sourcecode.lk/downloads/Meetup-POS-Setup.exe'
+
+/**
+ * Launch the installed Meetup POS desktop app via its meetuppos:// protocol,
+ * handing over the current auth token so it opens already signed in.
+ *
+ * We can't ask the OS "is this app installed?", so we use the standard trick:
+ * fire the protocol, then watch whether the browser loses focus. If the app is
+ * installed the OS takes over and this tab goes to the background; if nothing
+ * happens within ~1.5s we assume it isn't installed and send the user to the
+ * installer download instead.
+ */
+function openPosApp() {
+  const token = localStorage.getItem('token') || ''
+  const site = `${window.location.origin}/#/business/pos`
+  const url = `meetuppos://open?site=${encodeURIComponent(site)}&token=${encodeURIComponent(token)}`
+
+  let launched = false
+  const markLaunched = () => { launched = true }
+  window.addEventListener('blur', markLaunched)
+  document.addEventListener('visibilitychange', markLaunched)
+
+  const timer = setTimeout(() => {
+    window.removeEventListener('blur', markLaunched)
+    document.removeEventListener('visibilitychange', markLaunched)
+    if (!launched && !document.hidden) {
+      // App isn't installed — download the installer.
+      window.location.href = POS_INSTALLER_URL
+    }
+  }, 1500)
+
+  // Some browsers throw on an unknown protocol; the fallback timer still runs.
+  try {
+    window.location.href = url
+  } catch {
+    clearTimeout(timer)
+    window.location.href = POS_INSTALLER_URL
+  }
+>>>>>>> 15128662ac222836846d26fe68af9799c39a4e83
 }
 
 export default function BusinessDashboard() {
@@ -272,6 +318,9 @@ export default function BusinessDashboard() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-3">
+                  <button onClick={openPosApp} className="btn-blue py-2 text-sm">
+                    <Receipt size={15} /> Open POS
+                  </button>
                   <button onClick={() => setEditing(true)} className="btn-green py-2 text-sm">
                     <Pencil size={15} /> Edit profile
                   </button>

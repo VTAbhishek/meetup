@@ -155,6 +155,16 @@ export const api = {
   myOrders: () => request('my-company-orders.php', { auth: true }),
   setOrderStatus: (id, status) => request(`my-company-orders.php?id=${id}`, { method: 'POST', body: { status }, auth: true }),
   deleteOrder: (id) => request(`my-company-orders.php?id=${id}`, { method: 'DELETE', auth: true }),
+  // ---- POS / billing (per company) ----
+  posProducts: () => request('pos-products.php', { auth: true }),
+  addPosProduct: (b) => request('pos-products.php', { method: 'POST', body: b, auth: true }),
+  updatePosProduct: (id, b) => request(`pos-products.php?id=${id}`, { method: 'PUT', body: b, auth: true }),
+  deletePosProduct: (id) => request(`pos-products.php?id=${id}`, { method: 'DELETE', auth: true }),
+  posInvoices: () => request('pos-invoices.php', { auth: true }),
+  posInvoice: (id) => request(`pos-invoices.php?id=${id}`, { auth: true }),
+  createPosInvoice: (b) => request('pos-invoices.php', { method: 'POST', body: b, auth: true }),
+  posReport: (date) => request(`pos-report.php${date ? `?date=${date}` : ''}`, { auth: true }),
+
   uploadCompanyLogo: (file) => {
     const fd = new FormData()
     fd.append('logo', file)
