@@ -1,10 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-<<<<<<< HEAD
-import { Star, MessageSquare, ExternalLink, CornerDownRight, X, Pencil, Flag, Check, EyeOff, Globe, MapPin, Building2, Phone, ThumbsUp, Clock, GripVertical, Trash2, Camera, Film, CalendarClock } from 'lucide-react'
-=======
-import { Star, MessageSquare, ExternalLink, CornerDownRight, X, Pencil, Flag, Check, EyeOff, Globe, MapPin, Building2, Phone, ThumbsUp, Clock, GripVertical, Trash2, Camera, Film, Receipt } from 'lucide-react'
->>>>>>> 15128662ac222836846d26fe68af9799c39a4e83
+import { Star, MessageSquare, ExternalLink, CornerDownRight, X, Pencil, Flag, Check, EyeOff, Globe, MapPin, Building2, Phone, ThumbsUp, Clock, GripVertical, Trash2, Camera, Film, CalendarClock, Receipt } from 'lucide-react'
 import { api } from '../api'
 import { confirmDelete, toastOk, toastInfo, alertErr } from '../alerts'
 import { useLiveOrders } from '../lib/useLiveOrders'
@@ -27,7 +23,6 @@ import DashboardHeader from '../components/DashboardHeader'
 import Spinner from '../components/Spinner'
 import { colorFor, initials, ratingLabel, timeAgo } from '../lib'
 
-<<<<<<< HEAD
 /**
  * The dashboard's cards, each built on demand.
  *
@@ -95,7 +90,8 @@ function ViewTab({ on, onClick, icon: Icon, children }) {
       <Icon size={15} /> {children}
     </button>
   )
-=======
+}
+
 // Where the desktop installer lives on the server (upload the .exe here once).
 const POS_INSTALLER_URL = 'http://meetup.sourcecode.lk/downloads/Meetup-POS-Setup.exe'
 
@@ -135,7 +131,6 @@ function openPosApp() {
     clearTimeout(timer)
     window.location.href = POS_INSTALLER_URL
   }
->>>>>>> 15128662ac222836846d26fe68af9799c39a4e83
 }
 
 export default function BusinessDashboard() {
