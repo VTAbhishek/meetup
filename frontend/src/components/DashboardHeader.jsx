@@ -63,9 +63,11 @@ export default function DashboardHeader({ badge, accent = 'bg-brand-blue', notif
               <span className="text-sm font-semibold text-slate-700">{user?.full_name}</span>
             </div>
           )}
-          <button onClick={doLogout} className="btn-ghost py-2 text-sm">
-            <LogOut size={16} /> Log out
-          </button>
+          {!posOnly && (
+            <button onClick={doLogout} className="btn-ghost py-2 text-sm">
+              <LogOut size={16} /> Log out
+            </button>
+          )}
         </div>
       </div>
     </header>
