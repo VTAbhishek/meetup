@@ -37,7 +37,7 @@ function printReceipt(companyName, invoice) {
       .grand td{font-size:15px;font-weight:bold;padding-top:4px}
       @media print{body{padding:0}}
     </style></head>
-    <body onload="window.print()">
+    <body>
       <div class="receipt">
         <h1>${escapeHtml(companyName)}</h1>
         <div class="center muted">Sales Invoice</div><hr>
@@ -62,6 +62,11 @@ function printReceipt(companyName, invoice) {
   if (!w) { alertErr(null, 'Please allow pop-ups to print the bill.'); return }
   w.document.write(html)
   w.document.close()
+  // Print once the receipt has rendered. Driving it from here (rather than a
+  // body onload) is reliable in both the browser and the desktop app, where the
+  // blank popup has already fired its load event by the time we write into it.
+  w.focus()
+  setTimeout(() => { try { w.print() } catch { /* user closed it */ } }, 400)
 }
 
 function escapeHtml(s) {
