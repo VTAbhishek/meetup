@@ -18,6 +18,7 @@ import TableOrder from './pages/TableOrder'
 import Dashboard from './pages/Dashboard'
 import Settings from './pages/Settings'
 import BusinessDashboard from './pages/BusinessDashboard'
+import BusinessPos from './pages/BusinessPos'
 import AdminLayout from './components/AdminLayout'
 import AdminOverview from './pages/admin/Overview'
 import AdminCompanies from './pages/admin/Companies'
@@ -92,6 +93,14 @@ export default function App() {
         element={
           <ProtectedRoute role="company">
             <BusinessDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/business/pos"
+        element={
+          <ProtectedRoute role="company">
+            <BusinessPos />
           </ProtectedRoute>
         }
       />
