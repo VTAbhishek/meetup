@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { CalendarClock, Users, Phone, Check, Clock, Trash2, CornerDownRight, Send, Filter, UtensilsCrossed, Armchair } from 'lucide-react'
+import { CalendarClock, Users, Phone, Check, Clock, Trash2, CornerDownRight, Send, Filter, UtensilsCrossed, Armchair, Search, X } from 'lucide-react'
 import { api } from '../api'
 import { toastOk, alertErr, confirmDelete } from '../alerts'
 import { timeAgo } from '../lib'
@@ -14,6 +14,7 @@ export default function ReservationsManager() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all') // 'all' | 'pending' | 'confirmed'
+  const [searchQuery, setSearchQuery] = useState('')
 
   const load = () =>
     api
@@ -28,7 +29,20 @@ export default function ReservationsManager() {
 
   const pending = items.filter((r) => r.status === 'pending').length
   const confirmed = items.filter((r) => r.status === 'confirmed').length
-  const shown = filter === 'all' ? items : items.filter((r) => r.status === filter)
+
+  const shown = items.filter((r) => {
+    const statusMatch = filter === 'all' || r.status === filter
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return statusMatch
+
+    const nameMatch = r.name?.toLowerCase().includes(query)
+    const mobileMatch = r.mobile?.toLowerCase().includes(query)
+    const tableMatch = r.table_label?.toLowerCase().includes(query)
+    const foodMatch = r.items?.some((it) => it.name?.toLowerCase().includes(query))
+    const descMatch = r.description?.toLowerCase().includes(query)
+
+    return statusMatch && (nameMatch || mobileMatch || tableMatch || foodMatch || descMatch)
+  })
 
   return (
     <div className="card mt-6 p-6">
@@ -43,6 +57,26 @@ export default function ReservationsManager() {
           {pending > 0 && (
             <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-bold text-amber-700">{pending} pending</span>
           )}
+          <div className="relative w-60">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+              <Search size={15} />
+            </span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search reservations..."
+              className="w-full rounded-lg border border-slate-300 bg-white py-1.5 pl-9 pr-8 text-sm font-semibold text-slate-700 placeholder-slate-400 focus:border-brand-blue focus:outline-none"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400 hover:text-slate-600"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
           <label className="flex items-center gap-2 text-sm">
             <Filter size={15} className="text-slate-400" />
             <select
@@ -66,7 +100,7 @@ export default function ReservationsManager() {
         </p>
       ) : shown.length === 0 ? (
         <p className="rounded-xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-400">
-          No {filter} reservations.
+          {searchQuery ? 'No matching reservations found.' : `No ${filter} reservations.`}
         </p>
       ) : (
         <ul className="card-scroll-lg space-y-3">
@@ -106,6 +140,11 @@ function ReservationRow({ r, onChanged }) {
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-bold text-brand-navy">{r.name}</span>
+            {r.ref && (
+              <span className="rounded bg-brand-blue/10 px-2 py-0.5 text-xs font-bold text-brand-blue">
+                #{r.ref}
+              </span>
+            )}
             <span
               className={`rounded-full px-2 py-0.5 text-xs font-bold ${
                 confirmed ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
@@ -119,12 +158,10 @@ function ReservationRow({ r, onChanged }) {
             <span className="flex items-center gap-1.5"><CalendarClock size={14} className="text-slate-400" /> {dateLabel}, {r.time_from}–{r.time_to}</span>
             <span className="flex items-center gap-1.5"><Users size={14} className="text-slate-400" /> {r.person_count} {r.person_count === 1 ? 'person' : 'people'}</span>
             <a href={`tel:${r.mobile}`} className="flex items-center gap-1.5 hover:text-brand-blue"><Phone size={14} className="text-slate-400" /> {r.mobile}</a>
-            {/* table_label is snapshotted, so it survives the table being deleted */}
-            {r.table_label && (
-              <span className="flex items-center gap-1.5 font-semibold text-brand-navy">
-                <Armchair size={14} className="text-brand-green" /> {r.table_label}
-              </span>
-            )}
+            <span className="flex items-center gap-1.5 font-semibold text-brand-navy">
+              <Armchair size={14} className={r.table_label ? 'text-brand-green' : 'text-slate-400'} />
+              {r.table_label ? r.table_label : <span className="font-normal text-slate-400">No table reserved</span>}
+            </span>
           </div>
           {r.description && <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">{r.description}</p>}
           {r.items?.length > 0 && (

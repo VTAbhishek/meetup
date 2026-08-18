@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Search, Check, X, Calendar } from 'lucide-react'
-import DatePicker from 'react-datepicker'
-import 'react-datepicker/dist/react-datepicker.css'
+import { Search, Check, X } from 'lucide-react'
 import { api } from '../api'
 import { toastOk, alertErr } from '../alerts'
 import { useAuth } from '../auth'
@@ -21,7 +19,6 @@ export default function WriteReview() {
   const [rating, setRating] = useState(0)
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
-  const [expDate, setExpDate] = useState('')
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(null) // { pending: bool }
@@ -78,7 +75,7 @@ export default function WriteReview() {
         rating,
         title: title.trim(),
         body: body.trim(),
-        experience_date: expDate || null,
+        experience_date: null,
       })
       if (res.pending) {
         setDone({ pending: true })
@@ -209,25 +206,6 @@ export default function WriteReview() {
                 className="input resize-y"
               />
               {errors.body && <p className="mt-1 text-sm text-red-600">{errors.body}</p>}
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-semibold text-slate-700">
-                Date of experience <span className="font-normal text-slate-400">(optional)</span>
-              </label>
-              <div className="relative">
-                <Calendar size={18} className="pointer-events-none absolute left-3 top-3 z-10 text-slate-400" />
-                <DatePicker
-                  selected={expDate ? new Date(expDate) : null}
-                  onChange={(date) => setExpDate(date ? date.toLocaleDateString('en-CA') : '')}
-                  maxDate={new Date()}
-                  dateFormat="MMMM d, yyyy"
-                  placeholderText="Select a date"
-                  isClearable
-                  showPopperArrow={false}
-                  className="input pl-10"
-                  wrapperClassName="w-full"
-                />
-              </div>
             </div>
           </div>
         </section>

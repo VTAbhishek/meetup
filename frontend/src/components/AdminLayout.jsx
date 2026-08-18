@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { Star, LayoutDashboard, Building2, Users, MessageSquare, Tag, Sparkles, MapPin, LogOut, ExternalLink } from 'lucide-react'
+import { Star, LayoutDashboard, Building2, Users, MessageSquare, Tag, Sparkles, MapPin, LogOut, ExternalLink, UtensilsCrossed } from 'lucide-react'
 import { useAuth } from '../auth'
 import { api } from '../api'
 import { colorFor, initials } from '../lib'
@@ -13,6 +13,7 @@ const NAV = [
   { to: '/admin/locations', icon: MapPin, label: 'Locations' },
   { to: '/admin/customers', icon: Users, label: 'Customers', badge: 'customers' },
   { to: '/admin/reviews', icon: MessageSquare, label: 'Reviews' },
+  { to: '/admin/menu-categories', icon: UtensilsCrossed, label: 'Menu Categories' },
 ]
 
 export default function AdminLayout() {

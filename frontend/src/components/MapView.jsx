@@ -46,7 +46,7 @@ export default function MapView({ lat, lng, zoom = DEFAULT_ZOOM, name, address, 
         </p>
       )}
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      <div className="mt-3 flex flex-col gap-2">
         <a href={directionsUrl(lat, lng)} target="_blank" rel="noreferrer" className="btn-blue justify-center py-2.5 text-sm">
           <Navigation size={15} /> Get directions
         </a>

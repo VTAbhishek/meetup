@@ -1,23 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Star, PenLine, LayoutGrid, ChevronDown, User, Settings, LogOut, Building2, Menu, X } from 'lucide-react'
+import { Star, PenLine, LayoutGrid, ChevronDown, User, Settings, LogOut, Building2, Menu, X, CalendarClock } from 'lucide-react'
 import { useAuth } from '../auth'
 import { useLang } from '../i18n'
 import { colorFor, initials } from '../lib'
 import { homeFor } from './AuthShell'
 import SearchBar from './SearchBar'
-import DistrictCityPicker from './DistrictCityPicker'
 import CustomerBell from './CustomerBell'
-import { useLocationCtx } from '../location'
 
 export default function Navbar() {
   const { user, logout } = useAuth()
   const { t } = useLang()
-  const { districts, districtId, cityId, setDistrict, setCity } = useLocationCtx()
 
-  // Picking a location from the navbar takes you to the filtered results.
-  const goDistrict = (id) => { setDistrict(id); navigate('/search') }
-  const goCity = (id) => { setCity(id); navigate('/search') }
   const [menu, setMenu] = useState(false)      // desktop avatar dropdown
   const [mobile, setMobile] = useState(false)  // mobile slide-down panel
   const navigate = useNavigate()
@@ -89,6 +83,9 @@ export default function Navbar() {
                     <p className="truncate text-xs text-slate-500">{user.email}</p>
                   </div>
                   <MenuItem to="/dashboard" icon={User} label={t('myReviews')} onClick={() => setMenu(false)} />
+                  {user?.user_type === 'customer' && (
+                    <MenuItem to="/my-reservations" icon={CalendarClock} label="Reservation Details" onClick={() => setMenu(false)} />
+                  )}
                   <MenuItem to="/settings" icon={Settings} label={t('accountSettings')} onClick={() => setMenu(false)} />
                   <button onClick={doLogout} className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50">
                     <LogOut size={16} /> {t('logout')}
@@ -105,17 +102,6 @@ export default function Navbar() {
           <Link to="/business/login" className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-brand-blueLight/15 px-4 py-2 text-sm font-bold text-brand-blue hover:bg-brand-blueLight/25">
             <Building2 size={16} /> {t('forBusinesses')}
           </Link>
-
-          <div className="w-56">
-            <DistrictCityPicker
-              districts={districts}
-              districtId={districtId}
-              cityId={cityId}
-              onDistrict={goDistrict}
-              onCity={goCity}
-              selectClass="w-full rounded-full border border-slate-300 bg-white py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 focus:border-brand-blue focus:outline-none"
-            />
-          </div>
         </nav>
 
         {/* Mobile: bell (customers) + hamburger */}
@@ -158,22 +144,14 @@ export default function Navbar() {
           <MobileLink to="/categories" icon={LayoutGrid}>{t('categories')}</MobileLink>
           <MobileLink to="/business/login" icon={Building2}>{t('forBusinesses')}</MobileLink>
 
-          <div className="px-1 pt-2">
-            <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-slate-400">Location</p>
-            <DistrictCityPicker
-              districts={districts}
-              districtId={districtId}
-              cityId={cityId}
-              onDistrict={goDistrict}
-              onCity={goCity}
-            />
-          </div>
-
           <hr className="my-2 border-slate-100" />
 
           {user ? (
             <>
               <MobileLink to="/dashboard" icon={User}>{t('myReviews')}</MobileLink>
+              {user?.user_type === 'customer' && (
+                <MobileLink to="/my-reservations" icon={CalendarClock}>Reservation Details</MobileLink>
+              )}
               <MobileLink to="/settings" icon={Settings}>{t('accountSettings')}</MobileLink>
               <button onClick={doLogout} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-red-600 hover:bg-red-50">
                 <LogOut size={18} /> {t('logout')}

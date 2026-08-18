@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
-import { CalendarClock, ArrowLeft, Users, Phone, User, ClipboardList, Check, UtensilsCrossed, Plus, Minus, ShoppingCart, Trash2, X, Armchair, Info, RefreshCw, AlertTriangle } from 'lucide-react'
+import { CalendarClock, ArrowLeft, Users, Phone, User, ClipboardList, Check, UtensilsCrossed, Plus, Minus, ShoppingCart, Trash2, X, Armchair, Info, RefreshCw, AlertTriangle, Search } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../auth'
 import { toastOk, toastInfo, alertErr } from '../alerts'
@@ -36,6 +36,7 @@ export default function ReserveBooking() {
   const [cat, setCat] = useState('all')
   const [cart, setCart] = useState({}) // { [itemId]: qty }
   const [detail, setDetail] = useState(null) // menu item shown in the detail card
+  const [searchQuery, setSearchQuery] = useState('')
 
   // ---- Tables ----
   const [tableData, setTableData] = useState({ categories: [], tables: [] })
@@ -173,10 +174,14 @@ export default function ReserveBooking() {
   }, [qrTable, tableData])
 
   const itemsById = useMemo(() => Object.fromEntries(menu.items.map((i) => [i.id, i])), [menu])
-  const shownItems = useMemo(
-    () => (cat === 'all' ? menu.items : menu.items.filter((i) => i.category === cat)),
-    [menu, cat]
-  )
+  const shownItems = useMemo(() => {
+    let list = cat === 'all' ? menu.items : menu.items.filter((i) => i.category === cat)
+    const query = searchQuery.trim().toLowerCase()
+    if (query) {
+      list = list.filter((i) => i.name?.toLowerCase().includes(query) || i.category?.toLowerCase().includes(query))
+    }
+    return list
+  }, [menu, cat, searchQuery])
   const cartLines = useMemo(
     () => Object.entries(cart).filter(([, q]) => q > 0).map(([id, q]) => ({ item: itemsById[id], qty: q })).filter((l) => l.item),
     [cart, itemsById]
@@ -284,22 +289,50 @@ export default function ReserveBooking() {
                 <UtensilsCrossed size={20} className="text-brand-green" /> Pre-order food
                 <span className="text-sm font-normal text-slate-400">(optional)</span>
               </h2>
-              <label className="flex items-center gap-2 text-sm">
-                <span className="font-semibold text-slate-500">Category</span>
-                <select
-                  value={cat}
-                  onChange={(e) => setCat(e.target.value)}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 focus:border-brand-blue focus:outline-none"
-                >
-                  <option value="all">All items</option>
-                  {menu.categories.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </label>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="relative w-60">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">
+                    <Search size={15} />
+                  </span>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search food items..."
+                    className="w-full rounded-lg border border-slate-300 bg-white py-1.5 pl-9 pr-8 text-sm font-semibold text-slate-700 placeholder-slate-400 focus:border-brand-blue focus:outline-none"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute inset-y-0 right-0 flex items-center pr-2.5 text-slate-400 hover:text-slate-600"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <span className="font-semibold text-slate-500">Category</span>
+                  <select
+                    value={cat}
+                    onChange={(e) => setCat(e.target.value)}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 focus:border-brand-blue focus:outline-none"
+                  >
+                    <option value="all">All items</option>
+                    {menu.categories.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </label>
+              </div>
             </div>
 
             {/* Cap the list at ~3 rows tall; more items scroll inside the card. */}
             <div className="card-scroll mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {shownItems.map((it) => {
+              {shownItems.length === 0 ? (
+                <p className="py-10 text-center text-sm text-slate-400 sm:col-span-2 lg:col-span-3">
+                  {searchQuery ? 'No matching food items found.' : 'No items in this category.'}
+                </p>
+              ) : (
+                shownItems.map((it) => {
                 const qty = cart[it.id] || 0
                 return (
                   <div
@@ -334,7 +367,7 @@ export default function ReserveBooking() {
                     </div>
                   </div>
                 )
-              })}
+              }))}
             </div>
           </div>
         )}

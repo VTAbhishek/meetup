@@ -9,6 +9,12 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // If opening a new tab/session, clear any previous login token
+    if (!sessionStorage.getItem('has_session')) {
+      localStorage.removeItem('token')
+      sessionStorage.setItem('has_session', '1')
+    }
+
     const t = localStorage.getItem('token')
     if (!t) {
       setLoading(false)

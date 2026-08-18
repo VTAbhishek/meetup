@@ -97,6 +97,7 @@ export const api = {
     return request(`tables.php?${qs}`)
   },
   categories: () => request('categories.php'),
+  menuCategories: () => request('menu-categories.php'),
   locations: () => request('locations.php'),
   moods: () => request('moods.php'),
   recentReviews: (limit = 12) => request(`recent-reviews.php?limit=${limit}`),
@@ -111,6 +112,7 @@ export const api = {
   // ---- reservations ----
   createReservation: (b) => request('reservations.php', { method: 'POST', body: b, auth: true }),
   myReservations: () => request('reservations.php?mine=1', { auth: true }),
+  myReservationsCustomer: (page = 1, status = 'all') => request(`reservations-customer.php?page=${page}&status=${status}`, { auth: true }),
   updateReservation: (id, b) => request(`reservation.php?id=${id}`, { method: 'POST', body: b, auth: true }),
   deleteReservation: (id) => request(`reservation.php?id=${id}`, { method: 'DELETE', auth: true }),
 
@@ -196,6 +198,9 @@ export const api = {
   adminCategories: () => request('admin-categories.php', { auth: true }),
   createCategory: (name) => request('admin-categories.php', { method: 'POST', body: { name }, auth: true }),
   deleteCategory: (id) => request(`admin-categories.php?id=${id}`, { method: 'DELETE', auth: true }),
+  adminMenuCategories: () => request('admin-menu-categories.php', { auth: true }),
+  createMenuCategory: (name) => request('admin-menu-categories.php', { method: 'POST', body: { name }, auth: true }),
+  deleteMenuCategory: (id) => request(`admin-menu-categories.php?id=${id}`, { method: 'DELETE', auth: true }),
 
   // ---- admin: mood tags ----
   adminMoods: () => request('admin-moods.php', { auth: true }),

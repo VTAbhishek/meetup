@@ -74,7 +74,7 @@ if ($method === 'GET' && isset($_GET['mine'])) {
 // ---- Customer creates a reservation ----
 if ($method === 'POST') {
     $user = require_api_user();
-    if ($user['user_type'] !== 'customer') json_error('Only customers can make a reservation. Please log in as a customer.', 403);
+    // Allow any logged-in user to make a reservation (useful for testing by business owners and admins)
 
     $in        = json_in();
     $companyId = (int) ($in['company_id'] ?? 0);

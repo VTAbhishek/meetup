@@ -27,6 +27,8 @@ import AdminMoods from './pages/admin/Moods'
 import AdminLocations from './pages/admin/Locations'
 import AdminCustomers from './pages/admin/Customers'
 import AdminReviews from './pages/admin/Reviews'
+import AdminMenuCategories from './pages/admin/MenuCategories'
+import MyReservations from './pages/MyReservations'
 import NotFound from './pages/NotFound'
 
 export default function App() {
@@ -61,6 +63,14 @@ export default function App() {
           element={
             <ProtectedRoute role="customer">
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-reservations"
+          element={
+            <ProtectedRoute role="customer">
+              <MyReservations />
             </ProtectedRoute>
           }
         />
@@ -120,6 +130,7 @@ export default function App() {
         <Route path="locations" element={<AdminLocations />} />
         <Route path="customers" element={<AdminCustomers />} />
         <Route path="reviews" element={<AdminReviews />} />
+        <Route path="menu-categories" element={<AdminMenuCategories />} />
       </Route>
     </Routes>
   )

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Plus, X, ImagePlus, UtensilsCrossed, Trash2, List, Filter, Pencil } from 'lucide-react'
+import { Plus, X, ImagePlus, UtensilsCrossed, Trash2, List, Filter, Pencil, Search } from 'lucide-react'
 import { api } from '../api'
 import { confirmDelete, toastOk, alertErr } from '../alerts'
 import { compressImage } from '../lib/imageCompress'
@@ -26,9 +26,15 @@ export default function MenuManager() {
   const [editing, setEditing] = useState(null)  // the item open in the edit form
   const [busyId, setBusyId] = useState(null)
   const [filter, setFilter] = useState('all') // 'all' | category name
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const [allCategories, setAllCategories] = useState([])
 
   useEffect(() => {
     api.myMenu().then((d) => setItems(d.items)).catch(() => {}).finally(() => setLoading(false))
+    api.menuCategories()
+      .then((d) => setAllCategories(d.categories.map((c) => c.name).sort((a, b) => a.localeCompare(b))))
+      .catch(() => {})
   }, [])
 
   // Existing category names, for the datalist suggestions in the add form.
@@ -37,15 +43,17 @@ export default function MenuManager() {
     [items]
   )
 
-  // Group items by category for display, honoring the category filter.
+  // Group items by category for display, honoring the category filter and search query.
   const grouped = useMemo(() => {
     const g = {}
+    const query = searchQuery.trim().toLowerCase()
     for (const it of items) {
       if (filter !== 'all' && it.category !== filter) continue
+      if (query && !it.name?.toLowerCase().includes(query) && !it.category?.toLowerCase().includes(query)) continue
       (g[it.category] ||= []).push(it)
     }
     return g
-  }, [items, filter])
+  }, [items, filter, searchQuery])
 
   const toggle = async (it) => {
     setBusyId(it.id)
@@ -84,6 +92,27 @@ export default function MenuManager() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="relative w-48">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-slate-400">
+              <Search size={14} />
+            </span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search items..."
+              className="w-full rounded-lg border border-slate-300 bg-white py-1.5 pl-8 pr-7 text-xs font-semibold text-slate-700 placeholder-slate-400 focus:border-brand-blue focus:outline-none"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 right-0 flex items-center pr-2 text-slate-400 hover:text-slate-600"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
           {categories.length > 0 && (
             <label className="flex items-center gap-1.5 text-sm">
               <Filter size={15} className="text-slate-400" />
@@ -112,6 +141,10 @@ export default function MenuManager() {
       ) : items.length === 0 ? (
         <p className="rounded-xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-400">
           No menu items yet. Click <span className="font-semibold text-slate-500">Add item</span> to build your menu.
+        </p>
+      ) : Object.keys(grouped).length === 0 ? (
+        <p className="rounded-xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-400">
+          No matching menu items found.
         </p>
       ) : (
         /* Two columns of category blocks on a wide screen.
@@ -177,7 +210,7 @@ export default function MenuManager() {
 
       {adding && (
         <ItemModal
-          categories={categories}
+          categories={allCategories}
           onClose={() => setAdding(false)}
           onSaved={(list) => { setItems(list); setAdding(false) }}
         />
@@ -186,7 +219,7 @@ export default function MenuManager() {
       {editing && (
         <ItemModal
           item={editing}
-          categories={categories}
+          categories={allCategories}
           onClose={() => setEditing(null)}
           onSaved={(list) => { setItems(list); setEditing(null) }}
         />
@@ -235,9 +268,6 @@ function ItemModal({ item, categories, onClose, onSaved }) {
   const [dropImage, setDropImage] = useState(false) // clear the existing photo
   const [toCrop, setToCrop] = useState(null)    // File waiting in the crop modal
   const [busy, setBusy] = useState(false)
-  // Category: pick from existing ones, or "+" to type a new category. Start in
-  // "new" mode when the company has no categories yet (nothing to pick from).
-  const [newCat, setNewCat] = useState(categories.length === 0)
   const ref = useRef(null)
 
   const pick = async (e) => {
@@ -269,7 +299,7 @@ function ItemModal({ item, categories, onClose, onSaved }) {
   const save = async (e) => {
     e.preventDefault()
     if (!name.trim()) return alertErr('Please enter the item name.')
-    if (!category.trim()) return alertErr('Please choose or enter a category (e.g. Kottu, Rice).')
+    if (!category) return alertErr('Please select a category.')
     if (price === '' || Number(price) < 0) return alertErr('Please enter a valid price.')
     setBusy(true)
     try {
@@ -296,7 +326,7 @@ function ItemModal({ item, categories, onClose, onSaved }) {
         <form
           onSubmit={save}
           onClick={(e) => e.stopPropagation()}
-          className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-cardHover"
+          className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-cardHover"
         >
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-lg font-extrabold text-brand-navy">{editing ? 'Edit menu item' : 'Add menu item'}</h3>
@@ -311,47 +341,15 @@ function ItemModal({ item, categories, onClose, onSaved }) {
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="block">
               <span className="mb-1.5 block text-sm font-semibold text-slate-700">Category</span>
-              {newCat ? (
-                <div className="flex gap-1.5">
-                  <input
-                    className="input"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    maxLength={80}
-                    placeholder="New category e.g. Kottu"
-                    autoFocus
-                  />
-                  {categories.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => { setNewCat(false); setCategory('') }}
-                      title="Pick from existing categories"
-                      className="flex shrink-0 items-center justify-center rounded-xl border border-slate-300 px-2.5 text-slate-500 hover:bg-slate-50"
-                    >
-                      <List size={16} />
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="flex gap-1.5">
-                  <select
-                    className="input"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                  >
-                    <option value="" disabled>Select a category</option>
-                    {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => { setNewCat(true); setCategory('') }}
-                    title="Add a new category"
-                    className="flex shrink-0 items-center justify-center rounded-xl border border-brand-blue px-2.5 font-bold text-brand-blue hover:bg-brand-blue hover:text-white"
-                  >
-                    <Plus size={18} />
-                  </button>
-                </div>
-              )}
+              <select
+                className="input"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                required
+              >
+                <option value="" disabled>Select a category</option>
+                {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
             </div>
             <label className="block">
               <span className="mb-1.5 block text-sm font-semibold text-slate-700">Price (Rs)</span>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Star, MessageSquare, ExternalLink, CornerDownRight, X, Pencil, Flag, Check, EyeOff, Globe, MapPin, Building2, Phone, ThumbsUp, Clock, GripVertical, Trash2, Camera, Film, CalendarClock, Receipt } from 'lucide-react'
+import { Star, MessageSquare, ExternalLink, CornerDownRight, X, Pencil, Flag, Check, EyeOff, Globe, MapPin, Building2, Phone, ThumbsUp, Clock, GripVertical, Trash2, Camera, Film, CalendarClock, Receipt, Armchair, UtensilsCrossed } from 'lucide-react'
 import { api } from '../api'
 import { confirmDelete, toastOk, toastInfo, alertErr } from '../alerts'
 import { useLiveOrders } from '../lib/useLiveOrders'
@@ -60,18 +60,156 @@ const SECTIONS = {
     </div>
   ),
   reservations: () => <ReservationsManager key="reservations" />,
+  reviews: ({ data, setApproval, removeReview, setViewReview }) => {
+    const published = (data?.reviews || [])
+      .filter((r) => r.is_approved)
+      .sort((a, b) => (a.sort_order || 1e9) - (b.sort_order || 1e9) || new Date(b.created_at) - new Date(a.created_at))
+
+    return (
+      <div key="reviews" className="scroll-mt-20">
+        {/* Stats */}
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <StatCard label="Average rating" value={data.stats.avg_rating > 0 ? data.stats.avg_rating.toFixed(1) : '—'} sub={ratingLabel(data.stats.avg_rating)} icon={Star} />
+          <StatCard label="Published reviews" value={data.stats.review_count} sub="visible on site" icon={MessageSquare} />
+          <StatCard label="Pending approval" value={data.stats.pending} sub="awaiting access" icon={Flag} accent={data.stats.pending > 0} />
+        </div>
+
+        {/* Rating Breakdown & Customer Reviews list */}
+        <div className="mt-8 grid gap-6 lg:grid-cols-3">
+          {/* Left Column: Rating breakdown */}
+          <div className="lg:col-span-1">
+            <div className="card p-6 h-full">
+              <h3 className="font-bold text-brand-navy mb-4">Rating Breakdown</h3>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <p className="text-4xl font-extrabold text-brand-navy">{data.stats.avg_rating > 0 ? data.stats.avg_rating.toFixed(1) : '—'}</p>
+                  <p className="text-sm font-semibold text-brand-green">{ratingLabel(data.stats.avg_rating)}</p>
+                  <p className="text-xs text-slate-400">{data.stats.review_count} reviews</p>
+                </div>
+                <div className="space-y-1.5">
+                  {[5, 4, 3, 2, 1].map((star) => {
+                    const n = data.breakdown[star] || 0
+                    const pct = data.stats.review_count ? Math.round((n / data.stats.review_count) * 100) : 0
+                    return (
+                      <div key={star} className="flex items-center gap-2 text-xs">
+                        <span className="w-12 shrink-0 whitespace-nowrap text-slate-500">{star}-star</span>
+                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200">
+                          <div className="h-full rounded-full bg-brand-green" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="w-8 text-right text-slate-400">{pct}%</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Customer reviews list */}
+          <div className="lg:col-span-2">
+            <div className="card p-6 h-full">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-extrabold text-brand-navy">Customer reviews</h2>
+                <span className="text-sm text-slate-500">{data.reviews.length} total</span>
+              </div>
+
+              {data.stats.pending > 0 && (
+                <div className="mb-4 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  <Flag size={16} /> {data.stats.pending} review{data.stats.pending > 1 ? 's' : ''} awaiting your access — approve to show them on your public page.
+                </div>
+              )}
+
+              {data.reviews.length === 0 ? (
+                <div className="p-10 text-center text-slate-500">No reviews yet.</div>
+              ) : (
+                <div className="overflow-hidden rounded-xl border border-slate-100">
+                  <div className="overflow-x-auto overflow-y-auto max-h-[400px]">
+                    <table className="w-full min-w-[500px] text-sm">
+                      <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500 sticky top-0">
+                        <tr>
+                          <th className="px-4 py-3">Reviewer</th>
+                          <th className="px-4 py-3">Rating</th>
+                          <th className="px-4 py-3">Review</th>
+                          <th className="px-4 py-3">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {data.reviews.map((r) => (
+                          <tr
+                            key={r.id}
+                            onClick={() => setViewReview(r)}
+                            className={`cursor-pointer transition hover:bg-slate-50 ${!r.is_approved ? 'bg-amber-50/50' : ''}`}
+                          >
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2 font-semibold text-brand-navy">
+                                <span className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ backgroundColor: colorFor(r.customer_name) }}>
+                                  {initials(r.customer_name)}
+                                </span>
+                                {r.customer_name}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3"><Stars value={r.rating} size={14} /></td>
+                            <td className="max-w-xs truncate px-4 py-3 text-slate-600">{r.title || r.body}</td>
+                            <td className="px-4 py-3">
+                              {r.is_approved
+                                ? <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-bold text-green-700"><Check size={12} /> Published</span>
+                                : <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-700"><Clock size={12} /> Pending</span>}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Display order table */}
+        {published.length > 1 && <ReviewOrderTable reviews={published} />}
+      </div>
+    )
+  },
+  company_snapshot: ({ data }) => (
+    <div key="company_snapshot" className="mt-8 grid gap-4 md:grid-cols-2">
+      {/* About */}
+      <div className="card p-6">
+        <h3 className="font-bold text-brand-navy">About {data.company.company_name}</h3>
+        {data.company.description && <p className="mt-2 text-sm text-slate-600">{data.company.description}</p>}
+        <dl className="mt-3 space-y-2 text-sm">
+          <div className="flex justify-between"><dt className="text-slate-400">Category</dt><dd className="font-medium text-slate-700">{data.company.category || '—'}</dd></div>
+          <div className="flex justify-between"><dt className="text-slate-400">Status</dt><dd className="font-medium text-slate-700 capitalize">{data.company.status}</dd></div>
+        </dl>
+      </div>
+
+      {/* Contact info */}
+      <div className="card p-6">
+        <h3 className="font-bold text-brand-navy">Contact info</h3>
+        <ul className="mt-3 space-y-3 text-sm">
+          <li className="flex items-start gap-2.5"><MapPin size={16} className="mt-0.5 shrink-0 text-slate-400" /><span className="text-slate-700">{data.company.address || '—'}</span></li>
+          <li className="flex items-center gap-2.5">
+            <Building2 size={16} className="shrink-0 text-slate-400" />
+            <span className="text-slate-700">
+              {(data.company.city_name || data.company.district_name)
+                ? `${[data.company.city_name, data.company.district_name].filter(Boolean).join(', ')}${data.company.district_name ? ' District' : ''}`
+                : '—'}
+            </span>
+          </li>
+          <li className="flex items-center gap-2.5"><Phone size={16} className="shrink-0 text-slate-400" /><span className="text-slate-700">{data.company.phone || '—'}</span></li>
+          <li className="flex items-center gap-2.5"><Globe size={16} className="shrink-0 text-slate-400" /><span className="text-slate-700">{data.company.website || '—'}</span></li>
+        </ul>
+      </div>
+    </div>
+  ),
 }
 
-/**
- * 'company' builds the public profile; 'reservation' runs the day.
- *
- * Neither view hides anything — whichever cards aren't the point of the view
- * simply sit further down, so nothing a company set up can go missing because
- * of which button is pressed.
- */
 const SECTION_ORDER = {
-  company:     ['about', 'hours', 'map', 'moods', 'showcase', 'menu', 'tables', 'orders', 'reservations'],
-  reservation: ['reservations', 'orders', 'tables', 'menu', 'hours', 'about', 'map', 'moods', 'showcase'],
+  company:     ['about', 'hours', 'map', 'moods', 'showcase', 'menu', 'tables', 'orders', 'reservations', 'reviews', 'company_snapshot'],
+  reservation: ['reservations', 'orders', 'tables', 'menu', 'hours', 'about', 'map', 'moods', 'showcase', 'reviews', 'company_snapshot'],
+  tables:      ['orders', 'tables', 'reservations', 'menu', 'hours', 'about', 'map', 'moods', 'showcase', 'reviews', 'company_snapshot'],
+  menu:        ['menu', 'tables', 'orders', 'reservations', 'hours', 'about', 'map', 'moods', 'showcase', 'reviews', 'company_snapshot'],
+  reviews:     ['reviews', 'reservations', 'orders', 'tables', 'menu', 'hours', 'about', 'map', 'moods', 'showcase', 'company_snapshot'],
 }
 
 /** One of the two small buttons that pick the stacking order. */
@@ -336,145 +474,27 @@ export default function BusinessDashboard() {
               <ViewTab on={view === 'reservation'} onClick={() => setView('reservation')} icon={CalendarClock}>
                 Reservation
               </ViewTab>
+              <ViewTab on={view === 'tables'} onClick={() => setView('tables')} icon={Armchair}>
+                Table Reservation
+              </ViewTab>
+              <ViewTab on={view === 'menu'} onClick={() => setView('menu')} icon={UtensilsCrossed}>
+                Menu
+              </ViewTab>
+              <ViewTab on={view === 'reviews'} onClick={() => setView('reviews')} icon={MessageSquare}>
+                Reviews
+              </ViewTab>
             </div>
 
-            {/* The cards themselves. Each is keyed, so switching the order moves
-                the existing components rather than rebuilding them — a menu or
-                a table list already loaded doesn't refetch on every toggle. */}
-            {SECTION_ORDER[view].map((name) => SECTIONS[name]({
+             {SECTION_ORDER[view].map((name) => SECTIONS[name]({
               data,
               setData,
               liveOrders,
               soundOn,
               toggleSound,
+              setApproval,
+              removeReview,
+              setViewReview,
             }))}
-
-            {/* Stats */}
-            <div className="mt-6 grid gap-4 sm:grid-cols-3">
-              <StatCard label="Average rating" value={data.stats.avg_rating > 0 ? data.stats.avg_rating.toFixed(1) : '—'} sub={ratingLabel(data.stats.avg_rating)} icon={Star} />
-              <StatCard label="Published reviews" value={data.stats.review_count} sub="visible on site" icon={MessageSquare} />
-              <StatCard label="Pending approval" value={data.stats.pending} sub="awaiting access" icon={Flag} accent={data.stats.pending > 0} />
-            </div>
-
-            {/* Company page snapshot — 3 cards in one row */}
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              {/* Rating breakdown */}
-              <div className="card p-6">
-                <div className="flex items-center gap-4">
-                  <div>
-                    <p className="text-4xl font-extrabold text-brand-navy">{data.stats.avg_rating > 0 ? data.stats.avg_rating.toFixed(1) : '—'}</p>
-                    <p className="text-sm font-semibold text-brand-green">{ratingLabel(data.stats.avg_rating)}</p>
-                    <p className="text-xs text-slate-400">{data.stats.review_count} reviews</p>
-                  </div>
-                  <div className="flex-1 space-y-1.5">
-                    {[5, 4, 3, 2, 1].map((star) => {
-                      const n = data.breakdown[star] || 0
-                      const pct = data.stats.review_count ? Math.round((n / data.stats.review_count) * 100) : 0
-                      return (
-                        <div key={star} className="flex items-center gap-2 text-xs">
-                          <span className="w-12 shrink-0 whitespace-nowrap text-slate-500">{star}-star</span>
-                          <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200">
-                            <div className="h-full rounded-full bg-brand-green" style={{ width: `${pct}%` }} />
-                          </div>
-                          <span className="w-8 text-right text-slate-400">{pct}%</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* About */}
-              <div className="card p-6">
-                <h3 className="font-bold text-brand-navy">About {data.company.company_name}</h3>
-                {data.company.description && <p className="mt-2 text-sm text-slate-600">{data.company.description}</p>}
-                <dl className="mt-3 space-y-2 text-sm">
-                  <div className="flex justify-between"><dt className="text-slate-400">Category</dt><dd className="font-medium text-slate-700">{data.company.category || '—'}</dd></div>
-                  <div className="flex justify-between"><dt className="text-slate-400">Status</dt><dd className="font-medium text-slate-700 capitalize">{data.company.status}</dd></div>
-                </dl>
-              </div>
-
-              {/* Contact info */}
-              <div className="card p-6">
-                <h3 className="font-bold text-brand-navy">Contact info</h3>
-                <ul className="mt-3 space-y-3 text-sm">
-                  <li className="flex items-start gap-2.5"><MapPin size={16} className="mt-0.5 shrink-0 text-slate-400" /><span className="text-slate-700">{data.company.address || '—'}</span></li>
-                  <li className="flex items-center gap-2.5">
-                    <Building2 size={16} className="shrink-0 text-slate-400" />
-                    <span className="text-slate-700">
-                      {(data.company.city_name || data.company.district_name)
-                        ? `${[data.company.city_name, data.company.district_name].filter(Boolean).join(', ')}${data.company.district_name ? ' District' : ''}`
-                        : '—'}
-                    </span>
-                  </li>
-                  <li className="flex items-center gap-2.5"><Phone size={16} className="shrink-0 text-slate-400" /><span className="text-slate-700">{data.company.phone || '—'}</span></li>
-                  <li className="flex items-center gap-2.5"><Globe size={16} className="shrink-0 text-slate-400" /><span className="text-slate-700">{data.company.website || '—'}</span></li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Reviews (full width) */}
-            <div className="mt-8">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-extrabold text-brand-navy">Customer reviews</h2>
-                <span className="text-sm text-slate-500">{data.reviews.length} total</span>
-              </div>
-
-              {data.stats.pending > 0 && (
-                <div className="mb-4 flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  <Flag size={16} /> {data.stats.pending} review{data.stats.pending > 1 ? 's' : ''} awaiting your access — approve to show them on your public page.
-                </div>
-              )}
-
-              {data.reviews.length === 0 ? (
-                <div className="card p-10 text-center text-slate-500">No reviews yet.</div>
-              ) : (
-                <div className="card overflow-hidden">
-                  {/* Scrolls both ways: the table is wider than a phone, and a
-                      busy company's review list is longer than the screen. */}
-                  <div className="card-scroll-lg overflow-x-auto pr-0">
-                    <table className="w-full min-w-[680px] text-sm">
-                      {/* Pinned so the columns stay labelled while scrolling */}
-                      <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs uppercase text-slate-500">
-                        <tr>
-                          <th className="px-4 py-3">Reviewer</th>
-                          <th className="px-4 py-3">Rating</th>
-                          <th className="px-4 py-3">Review</th>
-                          <th className="px-4 py-3">Status</th>
-                          <th className="px-4 py-3">Date</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {data.reviews.map((r) => (
-                          <tr
-                            key={r.id}
-                            onClick={() => setViewReview(r)}
-                            className={`cursor-pointer transition hover:bg-slate-50 ${!r.is_approved ? 'bg-amber-50/50' : ''}`}
-                          >
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2 font-semibold text-brand-navy">
-                                <span className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white" style={{ backgroundColor: colorFor(r.customer_name) }}>
-                                  {initials(r.customer_name)}
-                                </span>
-                                {r.customer_name}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3"><Stars value={r.rating} size={14} /></td>
-                            <td className="max-w-xs truncate px-4 py-3 text-slate-600">{r.title || r.body}</td>
-                            <td className="px-4 py-3">
-                              {r.is_approved
-                                ? <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-bold text-green-700"><Check size={12} /> Published</span>
-                                : <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-700"><Clock size={12} /> Pending</span>}
-                            </td>
-                            <td className="whitespace-nowrap px-4 py-3 text-xs text-slate-400">{timeAgo(r.created_at)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Drag-to-reorder published reviews (controls order on the public page) */}
             {published.length > 1 && <ReviewOrderTable reviews={published} />}

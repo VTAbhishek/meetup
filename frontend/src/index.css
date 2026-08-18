@@ -187,9 +187,10 @@ body {
 .swal2-popup { font-family: inherit; border-radius: 1rem; }
 .swal-brand-title { color: #3B0764; font-weight: 800; }
 .swal-brand-btn { border-radius: 9999px !important; font-weight: 600 !important; padding: 0.6rem 1.4rem !important; }
-.swal2-timer-progress-bar { background: #DB2777 !important; }
-.swal2-icon.swal2-success [class^='swal2-success-line'] { background-color: #DB2777 !important; }
-.swal2-icon.swal2-success .swal2-success-ring { border-color: rgba(219,39,119,.3) !important; }
+.swal2-timer-progress-bar { background: #16A34A !important; }
+.swal2-icon.swal2-success { border-color: #16A34A !important; }
+.swal2-icon.swal2-success [class^='swal2-success-line'] { background-color: #16A34A !important; }
+.swal2-icon.swal2-success .swal2-success-ring { border-color: rgba(22,163,74,.3) !important; }
 
 /* ---- Table QR cards (10 × 10 cm, printable) ----
    Sized in millimetres so the on-screen preview and the sheet that leaves the

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Plus, X, ImagePlus, Armchair, Trash2, List, Filter, Users, QrCode, Printer, Pencil } from 'lucide-react'
+import { Plus, X, ImagePlus, Armchair, Trash2, List, Filter, Users, QrCode, Printer, Pencil, Search } from 'lucide-react'
 import { api } from '../api'
 import { confirmDelete, toastOk, alertErr } from '../alerts'
 import { compressImage } from '../lib/imageCompress'
@@ -31,6 +31,7 @@ export default function TableManager({ company }) {
   const [busyId, setBusyId] = useState(null)
   const [filter, setFilter] = useState('all')
   const [qrFor, setQrFor] = useState(null)   // tables whose cards are being previewed
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     api.myTables().then((d) => setTables(d.tables)).catch(() => {}).finally(() => setLoading(false))
@@ -41,10 +42,14 @@ export default function TableManager({ company }) {
     [tables]
   )
 
-  const visible = useMemo(
-    () => tables.filter((t) => filter === 'all' || t.category === filter),
-    [tables, filter]
-  )
+  const visible = useMemo(() => {
+    let list = tables.filter((t) => filter === 'all' || t.category === filter)
+    const query = searchQuery.trim().toLowerCase()
+    if (query) {
+      list = list.filter((t) => t.table_no?.toLowerCase().includes(query) || t.note?.toLowerCase().includes(query) || t.category?.toLowerCase().includes(query))
+    }
+    return list
+  }, [tables, filter, searchQuery])
 
   const grouped = useMemo(() => {
     const g = {}
@@ -98,6 +103,27 @@ export default function TableManager({ company }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="relative w-48">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-slate-400">
+              <Search size={14} />
+            </span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search tables..."
+              className="w-full rounded-lg border border-slate-300 bg-white py-1.5 pl-8 pr-7 text-xs font-semibold text-slate-700 placeholder-slate-400 focus:border-brand-blue focus:outline-none"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 right-0 flex items-center pr-2 text-slate-400 hover:text-slate-600"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
           {categories.length > 0 && (
             <label className="flex items-center gap-1.5 text-sm">
               <Filter size={15} className="text-slate-400" />
@@ -136,6 +162,10 @@ export default function TableManager({ company }) {
         <p className="rounded-xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-400">
           No tables yet. Click <span className="font-semibold text-slate-500">Add table</span> to let customers
           reserve a specific table.
+        </p>
+      ) : visible.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-slate-200 py-10 text-center text-sm text-slate-400">
+          No matching tables found.
         </p>
       ) : (
         <div className="card-scroll space-y-6">
