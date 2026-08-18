@@ -55,9 +55,15 @@ export default function ReviewCard({ review, showCompany = false, actions = null
 
       {review.reply && (
         <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm">
-          <p className="flex items-center gap-1 font-semibold text-slate-700">
-            <CornerDownRight size={14} /> Reply from the company
-          </p>
+          <div className="flex flex-wrap items-center gap-1.5 font-semibold text-slate-700">
+            <CornerDownRight size={14} />
+            <span>Reply from the company</span>
+            {review.reply.rating > 0 && (
+              <span className="ml-1 flex items-center">
+                <Stars value={review.reply.rating} size={12} />
+              </span>
+            )}
+          </div>
           <p className="mt-1 text-slate-600">{review.reply.body}</p>
         </div>
       )}

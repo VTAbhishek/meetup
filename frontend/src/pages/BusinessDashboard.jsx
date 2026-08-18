@@ -439,13 +439,13 @@ export default function BusinessDashboard() {
               {/* Cover banner (top part) */}
               <CoverBanner company={data.company} onChange={() => api.myCompany().then(setData)} />
 
-              {/* Details (bottom part) — logo overlaps the cover */}
-              <div className="flex flex-col gap-4 px-6 pb-6 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="-mt-12 shrink-0 rounded-2xl ring-4 ring-white sm:-mt-14">
+              {/* Details (bottom part) */}
+              <div className="flex flex-col gap-4 px-6 py-6 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="shrink-0">
                     <LogoAvatar company={data.company} onChange={() => api.myCompany().then(setData)} />
                   </div>
-                  <div className="pt-3">
+                  <div>
                     <h1 className="text-2xl font-extrabold text-brand-navy">{data.company.company_name}</h1>
                     <p className="text-sm text-slate-500">
                       {data.company.website || 'No website set'}
@@ -665,7 +665,15 @@ function ReviewDetailModal({ review: r, onClose, onApprove, onReply, onDelete })
 
           {r.reply && (
             <div className="mt-4 rounded-xl bg-slate-50 p-3 text-sm">
-              <p className="flex items-center gap-1 font-semibold text-slate-700"><CornerDownRight size={14} /> Your reply</p>
+              <div className="flex flex-wrap items-center gap-1.5 font-semibold text-slate-700">
+                <CornerDownRight size={14} />
+                <span>Your reply</span>
+                {r.reply.rating > 0 && (
+                  <span className="ml-1 flex items-center">
+                    <Stars value={r.reply.rating} size={12} />
+                  </span>
+                )}
+              </div>
               <p className="mt-1 text-slate-600">{r.reply.body}</p>
             </div>
           )}
@@ -788,6 +796,7 @@ function StatCard({ label, value, sub, icon: Icon, accent = false }) {
 
 function ReplyModal({ review, onClose, onSaved }) {
   const [body, setBody] = useState(review.reply?.body || '')
+  const [rating, setRating] = useState(review.reply?.rating || 0)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -796,7 +805,7 @@ function ReplyModal({ review, onClose, onSaved }) {
     setBusy(true)
     setError('')
     try {
-      await api.reply({ review_id: review.id, body: body.trim() })
+      await api.reply({ review_id: review.id, body: body.trim(), rating: rating > 0 ? rating : null })
       toastOk('Reply posted')
       onSaved()
     } catch (err) {
@@ -816,9 +825,30 @@ function ReplyModal({ review, onClose, onSaved }) {
         <form onSubmit={save} className="mt-4 space-y-4">
           {error && <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div>}
           <textarea className="input resize-y" rows={4} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Write a professional, helpful reply…" required />
-          <div className="flex justify-end gap-3">
-            <button type="button" onClick={onClose} className="btn-ghost">Cancel</button>
-            <button type="submit" disabled={busy} className="btn-green">{busy ? 'Posting…' : 'Post reply'}</button>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  type="button"
+                  key={star}
+                  onClick={() => setRating(star)}
+                  className="text-amber-400 focus:outline-none transition hover:scale-110"
+                >
+                  <Star
+                    size={22}
+                    fill={star <= rating ? '#fbbf24' : 'transparent'}
+                    strokeWidth={star <= rating ? 0 : 1.5}
+                  />
+                </button>
+              ))}
+              <span className="text-xs text-slate-400 ml-2">Rating (optional)</span>
+            </div>
+            
+            <div className="flex gap-3">
+              <button type="button" onClick={onClose} className="btn-ghost">Cancel</button>
+              <button type="submit" disabled={busy} className="btn-green">{busy ? 'Posting…' : 'Post reply'}</button>
+            </div>
           </div>
         </form>
       </div>
@@ -1104,12 +1134,12 @@ function LogoAvatar({ company, onChange }) {
   }
 
   return (
-    <div className="group relative h-16 w-16 shrink-0">
+    <div className="group relative h-20 w-20 shrink-0">
       {company.logo_url ? (
-        <img src={company.logo_url} alt={company.company_name} className="h-16 w-16 rounded-2xl object-cover ring-1 ring-slate-200" />
+        <img src={company.logo_url} alt={company.company_name} className="h-20 w-20 rounded-2xl object-cover ring-1 ring-slate-200" />
       ) : (
         <span
-          className="flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-extrabold text-white"
+          className="flex h-20 w-20 items-center justify-center rounded-2xl text-3xl font-extrabold text-white"
           style={{ backgroundColor: colorFor(company.company_name) }}
         >
           {initials(company.company_name)}

@@ -22,9 +22,11 @@ $stmt->execute([$reviewId, $user['id']]);
 $row = $stmt->fetch();
 if (!$row) json_error('Review not found for your company.', 404);
 
+$rating   = isset($in['rating']) && (int) $in['rating'] > 0 ? (int) $in['rating'] : null;
+
 // One reply per review: replace any existing one.
 db()->prepare('DELETE FROM review_replies WHERE review_id = ?')->execute([$reviewId]);
-db()->prepare('INSERT INTO review_replies (review_id, company_id, body) VALUES (?, ?, ?)')
-    ->execute([$reviewId, $row['company_id'], $body]);
+db()->prepare('INSERT INTO review_replies (review_id, company_id, body, rating) VALUES (?, ?, ?, ?)')
+    ->execute([$reviewId, $row['company_id'], $body, $rating]);
 
 json_out(['ok' => true]);

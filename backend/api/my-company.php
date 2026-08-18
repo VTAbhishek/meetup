@@ -37,7 +37,7 @@ foreach ($bd->fetchAll() as $r) $breakdown[(int) $r['rating']] = (int) $r['n'];
 $rev = db()->prepare(
     "SELECT r.id, r.rating, r.title, r.body, r.is_approved, r.sort_order, r.useful_count, r.created_at,
             u.full_name AS customer_name,
-            rr.body AS reply_body, rr.created_at AS reply_at
+            rr.body AS reply_body, rr.created_at AS reply_at, rr.rating AS reply_rating
      FROM reviews r
      JOIN users u ON u.id = r.customer_id
      LEFT JOIN review_replies rr ON rr.review_id = r.id
@@ -56,7 +56,11 @@ $reviews = array_map(function ($r) {
         'useful_count'  => (int) $r['useful_count'],
         'created_at'    => $r['created_at'],
         'customer_name' => $r['customer_name'],
-        'reply'         => $r['reply_body'] ? ['body' => $r['reply_body'], 'created_at' => $r['reply_at']] : null,
+        'reply'         => $r['reply_body'] ? [
+            'body' => $r['reply_body'],
+            'created_at' => $r['reply_at'],
+            'rating' => $r['reply_rating'] !== null ? (int) $r['reply_rating'] : null
+        ] : null,
     ];
 }, $rev->fetchAll());
 
