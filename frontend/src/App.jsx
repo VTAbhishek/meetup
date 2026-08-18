@@ -69,7 +69,7 @@ export default function App() {
         <Route
           path="/my-reservations"
           element={
-            <ProtectedRoute role="customer">
+            <ProtectedRoute>
               <MyReservations />
             </ProtectedRoute>
           }

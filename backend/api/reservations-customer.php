@@ -2,7 +2,7 @@
 require_once __DIR__ . '/_bootstrap.php';
 
 $user = require_api_user();
-if ($user['user_type'] !== 'customer') json_error('Forbidden', 403);
+// Allow any logged-in user to fetch their own reservations
 
 $pdo = db();
 $page = max(1, (int) ($_GET['page'] ?? 1));

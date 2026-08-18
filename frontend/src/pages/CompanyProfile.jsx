@@ -28,6 +28,15 @@ export default function CompanyProfile() {
       .then(setData)
       .catch(() => setData(null))
       .finally(() => setLoading(false))
+
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        api.company(slug, qs)
+          .then(setData)
+          .catch(() => {})
+      }
+    }, 10000)
+    return () => clearInterval(interval)
   }, [slug, rating, sort])
 
   if (loading && !data) return <Spinner />

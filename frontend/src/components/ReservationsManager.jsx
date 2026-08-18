@@ -25,6 +25,14 @@ export default function ReservationsManager() {
 
   useEffect(() => {
     load()
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        api.myReservations()
+          .then((d) => setItems(d.reservations || []))
+          .catch(() => {})
+      }
+    }, 10000)
+    return () => clearInterval(interval)
   }, [])
 
   const pending = items.filter((r) => r.status === 'pending').length

@@ -83,9 +83,7 @@ export default function Navbar() {
                     <p className="truncate text-xs text-slate-500">{user.email}</p>
                   </div>
                   <MenuItem to="/dashboard" icon={User} label={t('myReviews')} onClick={() => setMenu(false)} />
-                  {user?.user_type === 'customer' && (
-                    <MenuItem to="/my-reservations" icon={CalendarClock} label="Reservation Details" onClick={() => setMenu(false)} />
-                  )}
+                  <MenuItem to="/my-reservations" icon={CalendarClock} label="Reservation Details" onClick={() => setMenu(false)} />
                   <MenuItem to="/settings" icon={Settings} label={t('accountSettings')} onClick={() => setMenu(false)} />
                   <button onClick={doLogout} className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50">
                     <LogOut size={16} /> {t('logout')}
@@ -149,9 +147,7 @@ export default function Navbar() {
           {user ? (
             <>
               <MobileLink to="/dashboard" icon={User}>{t('myReviews')}</MobileLink>
-              {user?.user_type === 'customer' && (
-                <MobileLink to="/my-reservations" icon={CalendarClock}>Reservation Details</MobileLink>
-              )}
+              <MobileLink to="/my-reservations" icon={CalendarClock}>Reservation Details</MobileLink>
               <MobileLink to="/settings" icon={Settings}>{t('accountSettings')}</MobileLink>
               <button onClick={doLogout} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-red-600 hover:bg-red-50">
                 <LogOut size={18} /> {t('logout')}

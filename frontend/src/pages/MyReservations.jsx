@@ -29,6 +29,18 @@ export default function MyReservations() {
 
   useEffect(() => {
     load()
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        api.myReservationsCustomer(page, status)
+          .then((d) => {
+            setItems(d.reservations || [])
+            setTotalItems(d.total || 0)
+            setTotalPages(d.pages || 1)
+          })
+          .catch(() => {})
+      }
+    }, 10000)
+    return () => clearInterval(interval)
   }, [page, status])
 
   // Reset page when switching status filter

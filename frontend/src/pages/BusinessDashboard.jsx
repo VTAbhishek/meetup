@@ -290,7 +290,15 @@ export default function BusinessDashboard() {
     setLoading(true)
     api.myCompany().then(setData).finally(() => setLoading(false))
   }
-  useEffect(load, [])
+  useEffect(() => {
+    load()
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        api.myCompany().then(setData).catch(() => {})
+      }
+    }, 10000)
+    return () => clearInterval(interval)
+  }, [])
 
   const setApproval = async (review, approved) => {
     try {
