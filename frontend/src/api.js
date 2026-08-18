@@ -1,4 +1,16 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost/meetup/backend/api'
+let API_BASE = import.meta.env.VITE_API_BASE;
+
+if (!API_BASE) {
+  if (import.meta.env.DEV) {
+    API_BASE = 'http://localhost/meetup/backend/api';
+  } else {
+    API_BASE = '../../backend/api';
+  }
+} else if (API_BASE.startsWith('http://localhost') || API_BASE.startsWith('https://localhost')) {
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    API_BASE = '../../backend/api';
+  }
+}
 
 function getToken() {
   return localStorage.getItem('token')
